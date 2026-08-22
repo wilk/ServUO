@@ -314,6 +314,12 @@ namespace Server.Mobiles
             }
             #endregion
 
+            if (from.Mount == this)
+            {
+                from.SendLocalizedMessage(1005583); // Please dismount first.
+                return false;
+            }
+
             if (Parent == null)
             {
                 from.SayTo(from, 1010095); // This must be on your person to use.
@@ -338,12 +344,6 @@ namespace Server.Mobiles
                 return false;
             }
 
-            if (from.Mounted)
-            {
-                from.SendLocalizedMessage(1005583); // Please dismount first.
-                return false;
-            }
-
             if (from.IsBodyMod && !from.Body.IsHuman)
             {
                 from.SendLocalizedMessage(1061628); // You can't do that while polymorphed.
@@ -356,7 +356,15 @@ namespace Server.Mobiles
                 return false;
             }
 
-            if ((from.Followers + FollowerSlots) > from.FollowersMax)
+            int currentEtherealSlots = 0;
+            EtherealMount currentEthereal = from.Mount as EtherealMount;
+
+            if (currentEthereal != null)
+            {
+                currentEtherealSlots = currentEthereal.FollowerSlots;
+            }
+
+            if ((from.Followers + FollowerSlots - currentEtherealSlots) > from.FollowersMax)
             {
                 from.SendLocalizedMessage(1049679); // You have too many followers to summon your mount.
                 return false;

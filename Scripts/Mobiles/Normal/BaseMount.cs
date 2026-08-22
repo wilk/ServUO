@@ -21,6 +21,7 @@ namespace Server.Mobiles
     public abstract class BaseMount : BaseCreature, IMount
     {
         private static Dictionary<Mobile, BlockEntry> m_Table = new Dictionary<Mobile, BlockEntry>();
+        private static readonly int MountRange = Math.Max(0, Config.Get("General.MountRange", 3));
         private Mobile m_Rider;
 
         public BaseMount(string name, int bodyID, int itemID, AIType aiType, FightMode fightMode, int rangePerception, int rangeFight, double activeSpeed, double passiveSpeed)
@@ -466,12 +467,6 @@ namespace Server.Mobiles
                 return;
             }
 
-            if (from.Mounted)
-            {
-                from.SendLocalizedMessage(1005583); // Please dismount first.
-                return;
-            }
-
             if (from.Race == Race.Gargoyle && from.IsPlayer())
             {
                 from.SendLocalizedMessage(1112281);
@@ -494,7 +489,8 @@ namespace Server.Mobiles
                 return;
             }
 
-            if (from.InRange(this, 1))
+            // A mount at one tile keeps the old behaviour. The extra range needs line of sight.
+            if (from.InRange(this, 1) || (from.InRange(this, MountRange) && from.InLOS(this)))
             {
                 bool canAccess = (from.AccessLevel >= AccessLevel.GameMaster) ||
                                  (Controlled && ControlMaster == from) ||
