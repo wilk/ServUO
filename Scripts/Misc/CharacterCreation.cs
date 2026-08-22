@@ -30,10 +30,24 @@ namespace Server.Misc
 
 		private static Mobile m_Mobile;
 
+		private static readonly bool HumanOnly = Config.Get("CharacterCreation.HumanOnly", true);
+		private static readonly string ForceStartingCity = Config.Get("CharacterCreation.ForceStartingCity", "");
+
 		public static void Initialize()
 		{
 			// Register our event handler
 			EventSink.CharacterCreated += EventSink_CharacterCreated;
+
+			if (HumanOnly)
+			{
+				// Hide the Gargoyle button (needs the SA feature flag) and the Elf
+				// button (needs the ML character-list flag) in the Classic client.
+				// The ML feature flag itself stays on: it unlocks Mondain's Legacy
+				// client content this shard still uses.
+				SupportedFeatures.DisabledFlags |= FeatureFlags.SA;
+				CharacterList.DisabledFlags |= CharacterListFlags.ML;
+				CharacterListOld.DisabledFlags |= CharacterListFlags.ML;
+			}
 		}
 
 		public static bool VerifyProfession(int profession)
@@ -191,7 +205,9 @@ namespace Server.Misc
 			newChar.Female = args.Female;
 			//newChar.Body = newChar.Female ? 0x191 : 0x190;
 
-			if (Core.Expansion >= args.Race.RequiredExpansion)
+			if (HumanOnly)
+				newChar.Race = Race.Human; //Server is authoritative: ignore whatever race the client sent
+			else if (Core.Expansion >= args.Race.RequiredExpansion)
 				newChar.Race = args.Race; //Sets body
 			else
 				newChar.Race = Race.DefaultRace;
@@ -277,6 +293,25 @@ namespace Server.Misc
 			}
 
 			var city = args.City;
+
+			if (!string.IsNullOrEmpty(ForceStartingCity))
+			{
+				//Server is authoritative: ignore whatever city index the client sent
+				var cities = state.CityInfo;
+
+				if (cities != null)
+				{
+					for (var i = 0; i < cities.Length; i++)
+					{
+						if (cities[i].City == ForceStartingCity)
+						{
+							city = cities[i];
+							break;
+						}
+					}
+				}
+			}
+
 			var map = Siege.SiegeShard && city.Map == Map.Trammel ? Map.Felucca : city.Map;
 
 			newChar.MoveToWorld(city.Location, map);

@@ -3304,6 +3304,7 @@ m_Stream.Write( (int) renderMode );
 	public sealed class SupportedFeatures : Packet
 	{
 		public static FeatureFlags Value { get; set; }
+		public static FeatureFlags DisabledFlags { get; set; }
 
 		public static SupportedFeatures Instantiate(NetState ns)
 		{
@@ -3316,6 +3317,7 @@ m_Stream.Write( (int) renderMode );
 			FeatureFlags flags = ExpansionInfo.CoreExpansion.SupportedFeatures;
 
 			flags |= Value;
+			flags &= ~DisabledFlags;
 
 			IAccount acct = ns.Account;
 
@@ -4795,6 +4797,7 @@ m_Stream.Write( (int) renderMode );
             }
 
 			flags |= AdditionalFlags;
+			flags &= ~DisabledFlags;
 
 			Console.WriteLine("{0}: {1} / {2} [{3}]", a.Username, a.Count, a.Limit, flags);
 
@@ -4837,6 +4840,7 @@ m_Stream.Write( (int) renderMode );
 		private static MD5CryptoServiceProvider m_MD5Provider;
 
 		public static CharacterListFlags AdditionalFlags { get; set; }
+		public static CharacterListFlags DisabledFlags { get; set; }
 	}
 
 	public sealed class CharacterListOld : Packet
@@ -4900,7 +4904,10 @@ m_Stream.Write( (int) renderMode );
 				flags |= (CharacterListFlags.SlotLimit | CharacterListFlags.OneCharacterSlot); // Limit Characters & One Character
 			}
 
-			m_Stream.Write((int)(flags | CharacterList.AdditionalFlags)); // Additional Flags
+			flags |= CharacterList.AdditionalFlags;
+			flags &= ~DisabledFlags;
+
+			m_Stream.Write((int)flags); // Additional Flags
 
 			ThirdPartyFeature disabled = FeatureProtection.DisabledFeatures;
 
@@ -4935,6 +4942,8 @@ m_Stream.Write( (int) renderMode );
 		}
 
 		private static MD5CryptoServiceProvider m_MD5Provider;
+
+		public static CharacterListFlags DisabledFlags { get; set; }
 	}
 
 	public sealed class ClearWeaponAbility : Packet
