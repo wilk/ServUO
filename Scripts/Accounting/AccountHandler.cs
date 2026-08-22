@@ -420,7 +420,7 @@ namespace Server.Misc
         {
             for (var i = 0; i < cities.Length; i++)
             {
-                if (cities[i].City == ForceStartingCity)
+                if (Insensitive.Equals(cities[i].City, ForceStartingCity))
                 {
                     return new CityInfo[] { cities[i] };
                 }

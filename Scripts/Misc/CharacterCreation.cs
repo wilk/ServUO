@@ -30,7 +30,7 @@ namespace Server.Misc
 
 		private static Mobile m_Mobile;
 
-		private static readonly bool HumanOnly = Config.Get("CharacterCreation.HumanOnly", true);
+		private static readonly bool HumanOnly = Config.Get("CharacterCreation.HumanOnly", false);
 		private static readonly string ForceStartingCity = Config.Get("CharacterCreation.ForceStartingCity", "");
 
 		public static void Initialize()
@@ -44,7 +44,7 @@ namespace Server.Misc
 				// button (needs the ML character-list flag) in the Classic client.
 				// The ML feature flag itself stays on: it unlocks Mondain's Legacy
 				// client content this shard still uses.
-				SupportedFeatures.DisabledFlags |= FeatureFlags.SA;
+				SupportedFeatures.DisabledCharacterScreenFlags |= FeatureFlags.SA;
 				CharacterList.DisabledFlags |= CharacterListFlags.ML;
 				CharacterListOld.DisabledFlags |= CharacterListFlags.ML;
 			}
@@ -297,18 +297,20 @@ namespace Server.Misc
 			if (!string.IsNullOrEmpty(ForceStartingCity))
 			{
 				//Server is authoritative: ignore whatever city index the client sent
-				var cities = state.CityInfo;
+				var forced = FindForcedCity(state.CityInfo);
 
-				if (cities != null)
+				if (forced != null)
 				{
-					for (var i = 0; i < cities.Length; i++)
-					{
-						if (cities[i].City == ForceStartingCity)
-						{
-							city = cities[i];
-							break;
-						}
-					}
+					city = forced;
+				}
+				else
+				{
+					Utility.PushColor(ConsoleColor.Yellow);
+					Console.WriteLine(
+						"Login: {0}: CharacterCreation.ForceStartingCity '{1}' is not in the city list of this shard, the client keeps its own choice",
+						state,
+						ForceStartingCity);
+					Utility.PopColor();
 				}
 			}
 
@@ -325,6 +327,24 @@ namespace Server.Misc
 			Utility.PopColor();
 
 			new WelcomeTimer(newChar).Start();
+		}
+
+		private static CityInfo FindForcedCity(CityInfo[] cities)
+		{
+			if (cities == null)
+			{
+				return null;
+			}
+
+			for (var i = 0; i < cities.Length; i++)
+			{
+				if (Insensitive.Equals(cities[i].City, ForceStartingCity))
+				{
+					return cities[i];
+				}
+			}
+
+			return null;
 		}
 
 		private static void FixStats(ref int str, ref int dex, ref int intel, int max)

@@ -3304,7 +3304,11 @@ m_Stream.Write( (int) renderMode );
 	public sealed class SupportedFeatures : Packet
 	{
 		public static FeatureFlags Value { get; set; }
-		public static FeatureFlags DisabledFlags { get; set; }
+
+		// Flags cleared while the client waits at the login and character screens.
+		// The in-world sends keep every flag, so a character that already exists
+		// never loses a client feature.
+		public static FeatureFlags DisabledCharacterScreenFlags { get; set; }
 
 		public static SupportedFeatures Instantiate(NetState ns)
 		{
@@ -3317,7 +3321,11 @@ m_Stream.Write( (int) renderMode );
 			FeatureFlags flags = ExpansionInfo.CoreExpansion.SupportedFeatures;
 
 			flags |= Value;
-			flags &= ~DisabledFlags;
+
+			if (ns.Mobile == null)
+			{
+				flags &= ~DisabledCharacterScreenFlags;
+			}
 
 			IAccount acct = ns.Account;
 
