@@ -314,6 +314,12 @@ namespace Server.Mobiles
             }
             #endregion
 
+            if (from.Mount == this)
+            {
+                from.SendLocalizedMessage(1005583); // Please dismount first.
+                return false;
+            }
+
             if (Parent == null)
             {
                 from.SayTo(from, 1010095); // This must be on your person to use.
