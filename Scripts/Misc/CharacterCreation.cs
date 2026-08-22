@@ -30,24 +30,18 @@ namespace Server.Misc
 
 		private static Mobile m_Mobile;
 
+		//A Z of AutoZ means: read the height of the map at that point.
+		private const int AutoZ = int.MinValue;
+
 		private static readonly bool HumanOnly = Config.Get("CharacterCreation.HumanOnly", false);
-		private static readonly string ForceStartingCity = Config.Get("CharacterCreation.ForceStartingCity", "");
+		private static readonly Map ForcedStartMap = ParseStartMap(Config.Get("CharacterCreation.ForceStartingMap", "Trammel"));
+		private static readonly Point3D ForcedStartPoint = ParseStartPoint(Config.Get("CharacterCreation.ForceStartingLocation", ""));
+		private static readonly bool ForcedStart = ForcedStartMap != null && ForcedStartPoint != Point3D.Zero;
 
 		public static void Initialize()
 		{
 			// Register our event handler
 			EventSink.CharacterCreated += EventSink_CharacterCreated;
-
-			if (HumanOnly)
-			{
-				// Hide the Gargoyle button (needs the SA feature flag) and the Elf
-				// button (needs the ML character-list flag) in the Classic client.
-				// The ML feature flag itself stays on: it unlocks Mondain's Legacy
-				// client content this shard still uses.
-				SupportedFeatures.DisabledCharacterScreenFlags |= FeatureFlags.SA;
-				CharacterList.DisabledFlags |= CharacterListFlags.ML;
-				CharacterListOld.DisabledFlags |= CharacterListFlags.ML;
-			}
 		}
 
 		public static bool VerifyProfession(int profession)
@@ -206,7 +200,7 @@ namespace Server.Misc
 			//newChar.Body = newChar.Female ? 0x191 : 0x190;
 
 			if (HumanOnly)
-				newChar.Race = Race.Human; //Server is authoritative: ignore whatever race the client sent
+				newChar.Race = Race.Human; //The client can show any race. The server keeps only this one.
 			else if (Core.Expansion >= args.Race.RequiredExpansion)
 				newChar.Race = args.Race; //Sets body
 			else
@@ -293,58 +287,75 @@ namespace Server.Misc
 			}
 
 			var city = args.City;
+			var map = Siege.SiegeShard && city.Map == Map.Trammel ? Map.Felucca : city.Map;
+			var location = city.Location;
+			var origin = city.City;
 
-			if (!string.IsNullOrEmpty(ForceStartingCity))
+			if (ForcedStart)
 			{
-				//Server is authoritative: ignore whatever city index the client sent
-				var forced = FindForcedCity(state.CityInfo);
+				//The client can pick any city. The server keeps only this point.
+				map = Siege.SiegeShard && ForcedStartMap == Map.Trammel ? Map.Felucca : ForcedStartMap;
+				location = ForcedStartPoint;
+				origin = "Forced start";
 
-				if (forced != null)
-				{
-					city = forced;
-				}
-				else
-				{
-					Utility.PushColor(ConsoleColor.Yellow);
-					Console.WriteLine(
-						"Login: {0}: CharacterCreation.ForceStartingCity '{1}' is not in the city list of this shard, the client keeps its own choice",
-						state,
-						ForceStartingCity);
-					Utility.PopColor();
-				}
+				if (location.Z == AutoZ)
+					location = new Point3D(location.X, location.Y, map.GetAverageZ(location.X, location.Y));
 			}
 
-			var map = Siege.SiegeShard && city.Map == Map.Trammel ? Map.Felucca : city.Map;
-
-			newChar.MoveToWorld(city.Location, map);
+			newChar.MoveToWorld(location, map);
 
 			Utility.PushColor(ConsoleColor.Green);
 			Console.WriteLine("Login: {0}: New character being created (account={1})", state, args.Account.Username);
 			Utility.PopColor();
 			Utility.PushColor(ConsoleColor.DarkGreen);
 			Console.WriteLine(" - Character: {0} (serial={1})", newChar.Name, newChar.Serial);
-			Console.WriteLine(" - Started: {0} {1} in {2}", city.City, city.Location, city.Map);
+			Console.WriteLine(" - Started: {0} {1} in {2}", origin, location, map);
 			Utility.PopColor();
 
 			new WelcomeTimer(newChar).Start();
 		}
 
-		private static CityInfo FindForcedCity(CityInfo[] cities)
+		private static Map ParseStartMap(string value)
 		{
-			if (cities == null)
+			if (String.IsNullOrWhiteSpace(value))
+				return null;
+
+			try
 			{
+				return Map.Parse(value.Trim());
+			}
+			catch
+			{
+				Utility.PushColor(ConsoleColor.Yellow);
+				Console.WriteLine("Config: CharacterCreation.ForceStartingMap '{0}' is not a map name, the player keeps the city of the client", value);
+				Utility.PopColor();
+
 				return null;
 			}
+		}
 
-			for (var i = 0; i < cities.Length; i++)
+		private static Point3D ParseStartPoint(string value)
+		{
+			if (String.IsNullOrWhiteSpace(value))
+				return Point3D.Zero;
+
+			var parts = value.Split(',');
+
+			int x, y, z;
+
+			if (parts.Length < 2 || !Int32.TryParse(parts[0].Trim(), out x) || !Int32.TryParse(parts[1].Trim(), out y))
 			{
-				if (Insensitive.Equals(cities[i].City, ForceStartingCity))
-				{
-					return cities[i];
-				}
+				Utility.PushColor(ConsoleColor.Yellow);
+				Console.WriteLine("Config: CharacterCreation.ForceStartingLocation '{0}' is not a location, the player keeps the city of the client", value);
+				Utility.PopColor();
+
+				return Point3D.Zero;
 			}
 
-			return null;
+			if (parts.Length > 2 && Int32.TryParse(parts[2].Trim(), out z))
+				return new Point3D(x, y, z);
+
+			return new Point3D(x, y, AutoZ);
 		}
 
 		private static void FixStats(ref int str, ref int dex, ref int intel, int max)

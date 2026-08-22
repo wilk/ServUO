@@ -3305,11 +3305,6 @@ m_Stream.Write( (int) renderMode );
 	{
 		public static FeatureFlags Value { get; set; }
 
-		// Flags cleared while the client waits at the login and character screens.
-		// The in-world sends keep every flag, so a character that already exists
-		// never loses a client feature.
-		public static FeatureFlags DisabledCharacterScreenFlags { get; set; }
-
 		public static SupportedFeatures Instantiate(NetState ns)
 		{
 			return new SupportedFeatures(ns);
@@ -3321,11 +3316,6 @@ m_Stream.Write( (int) renderMode );
 			FeatureFlags flags = ExpansionInfo.CoreExpansion.SupportedFeatures;
 
 			flags |= Value;
-
-			if (ns.Mobile == null)
-			{
-				flags &= ~DisabledCharacterScreenFlags;
-			}
 
 			IAccount acct = ns.Account;
 
@@ -4805,7 +4795,6 @@ m_Stream.Write( (int) renderMode );
             }
 
 			flags |= AdditionalFlags;
-			flags &= ~DisabledFlags;
 
 			Console.WriteLine("{0}: {1} / {2} [{3}]", a.Username, a.Count, a.Limit, flags);
 
@@ -4848,7 +4837,6 @@ m_Stream.Write( (int) renderMode );
 		private static MD5CryptoServiceProvider m_MD5Provider;
 
 		public static CharacterListFlags AdditionalFlags { get; set; }
-		public static CharacterListFlags DisabledFlags { get; set; }
 	}
 
 	public sealed class CharacterListOld : Packet
@@ -4912,10 +4900,7 @@ m_Stream.Write( (int) renderMode );
 				flags |= (CharacterListFlags.SlotLimit | CharacterListFlags.OneCharacterSlot); // Limit Characters & One Character
 			}
 
-			flags |= CharacterList.AdditionalFlags;
-			flags &= ~DisabledFlags;
-
-			m_Stream.Write((int)flags); // Additional Flags
+			m_Stream.Write((int)(flags | CharacterList.AdditionalFlags)); // Additional Flags
 
 			ThirdPartyFeature disabled = FeatureProtection.DisabledFeatures;
 
@@ -4950,8 +4935,6 @@ m_Stream.Write( (int) renderMode );
 		}
 
 		private static MD5CryptoServiceProvider m_MD5Provider;
-
-		public static CharacterListFlags DisabledFlags { get; set; }
 	}
 
 	public sealed class ClearWeaponAbility : Packet

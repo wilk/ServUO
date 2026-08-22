@@ -30,8 +30,6 @@ namespace Server.Misc
         private static readonly bool RestrictDeletion = Config.Get("Accounts.RestrictDeletion", !TestCenter.Enabled);
         private static readonly TimeSpan DeleteDelay = Config.Get("Accounts.DeleteDelay", TimeSpan.FromDays(7.0));
 
-        private static readonly string ForceStartingCity = Config.Get("CharacterCreation.ForceStartingCity", "");
-
         private static readonly CityInfo[] StartingCitiesT2A = new CityInfo[]
         {
             new CityInfo("New Haven",	"New Haven Bank",	1150168, 3503,	2574,	14, Map.Felucca),
@@ -405,32 +403,10 @@ namespace Server.Misc
                 {
                     e.CityInfo = StartingCitiesSA;
                 }
-
-                if (!string.IsNullOrEmpty(ForceStartingCity))
-                {
-                    e.CityInfo = ForceCityInfo(e.CityInfo);
-                }
             }
 
             if (!e.Accepted)
                 AccountAttackLimiter.RegisterInvalidAccess(e.State);
-        }
-
-        private static CityInfo[] ForceCityInfo(CityInfo[] cities)
-        {
-            for (var i = 0; i < cities.Length; i++)
-            {
-                if (Insensitive.Equals(cities[i].City, ForceStartingCity))
-                {
-                    return new CityInfo[] { cities[i] };
-                }
-            }
-
-            Utility.PushColor(ConsoleColor.Yellow);
-            Console.WriteLine("Config: CharacterCreation.ForceStartingCity '{0}' not found in the starting city list, ignoring", ForceStartingCity);
-            Utility.PopColor();
-
-            return cities;
         }
 
         public static bool CheckAccount(Mobile mobCheck, Mobile accCheck)
