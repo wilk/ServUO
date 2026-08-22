@@ -33,6 +33,9 @@ namespace Server.Misc
 		//A Z of AutoZ means: read the height of the map at that point.
 		private const int AutoZ = int.MinValue;
 
+		//The first skin hue of the human race. Race.Human keeps 1002 to 1058.
+		private const int DefaultHumanSkinHue = 1002;
+
 		private static readonly bool HumanOnly = Config.Get("CharacterCreation.HumanOnly", false);
 		private static readonly Map ForcedStartMap = ParseStartMap(Config.Get("CharacterCreation.ForceStartingMap", "Trammel"));
 		private static readonly Point3D ForcedStartPoint = ParseStartPoint(Config.Get("CharacterCreation.ForceStartingLocation", ""));
@@ -207,6 +210,17 @@ namespace Server.Misc
 				newChar.Race = Race.DefaultRace;
 
 			newChar.Hue = args.Hue | 0x8000;
+
+			if (HumanOnly)
+			{
+				//The client sends the skin hue of the race the player picked. A hue
+				//of another race stays dark on a human body, so put it back to the
+				//first human skin hue.
+				var skinHue = newChar.Hue & 0x7FFF;
+
+				if (Race.Human.ClipSkinHue(skinHue) != skinHue)
+					newChar.Hue = DefaultHumanSkinHue | 0x8000;
+			}
 
 			newChar.Hunger = 20;
 
