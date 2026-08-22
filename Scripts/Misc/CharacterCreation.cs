@@ -30,6 +30,17 @@ namespace Server.Misc
 
 		private static Mobile m_Mobile;
 
+		//A Z of AutoZ means: read the height of the map at that point.
+		private const int AutoZ = int.MinValue;
+
+		//The first skin hue of the human race. Race.Human keeps 1002 to 1058.
+		private const int DefaultHumanSkinHue = 1002;
+
+		private static readonly bool HumanOnly = Config.Get("CharacterCreation.HumanOnly", false);
+		private static readonly Map ForcedStartMap = ParseStartMap(Config.Get("CharacterCreation.ForceStartingMap", "Trammel"));
+		private static readonly Point3D ForcedStartPoint = ParseStartPoint(Config.Get("CharacterCreation.ForceStartingLocation", ""));
+		private static readonly bool ForcedStart = ForcedStartMap != null && ForcedStartPoint != Point3D.Zero;
+
 		public static void Initialize()
 		{
 			// Register our event handler
@@ -191,12 +202,25 @@ namespace Server.Misc
 			newChar.Female = args.Female;
 			//newChar.Body = newChar.Female ? 0x191 : 0x190;
 
-			if (Core.Expansion >= args.Race.RequiredExpansion)
+			if (HumanOnly)
+				newChar.Race = Race.Human; //The client can show any race. The server keeps only this one.
+			else if (Core.Expansion >= args.Race.RequiredExpansion)
 				newChar.Race = args.Race; //Sets body
 			else
 				newChar.Race = Race.DefaultRace;
 
 			newChar.Hue = args.Hue | 0x8000;
+
+			if (HumanOnly)
+			{
+				//The client sends the skin hue of the race the player picked. A hue
+				//of another race stays dark on a human body, so put it back to the
+				//first human skin hue.
+				var skinHue = newChar.Hue & 0x7FFF;
+
+				if (Race.Human.ClipSkinHue(skinHue) != skinHue)
+					newChar.Hue = DefaultHumanSkinHue | 0x8000;
+			}
 
 			newChar.Hunger = 20;
 
@@ -278,18 +302,74 @@ namespace Server.Misc
 
 			var city = args.City;
 			var map = Siege.SiegeShard && city.Map == Map.Trammel ? Map.Felucca : city.Map;
+			var location = city.Location;
+			var origin = city.City;
 
-			newChar.MoveToWorld(city.Location, map);
+			if (ForcedStart)
+			{
+				//The client can pick any city. The server keeps only this point.
+				map = Siege.SiegeShard && ForcedStartMap == Map.Trammel ? Map.Felucca : ForcedStartMap;
+				location = ForcedStartPoint;
+				origin = "Forced start";
+
+				if (location.Z == AutoZ)
+					location = new Point3D(location.X, location.Y, map.GetAverageZ(location.X, location.Y));
+			}
+
+			newChar.MoveToWorld(location, map);
 
 			Utility.PushColor(ConsoleColor.Green);
 			Console.WriteLine("Login: {0}: New character being created (account={1})", state, args.Account.Username);
 			Utility.PopColor();
 			Utility.PushColor(ConsoleColor.DarkGreen);
 			Console.WriteLine(" - Character: {0} (serial={1})", newChar.Name, newChar.Serial);
-			Console.WriteLine(" - Started: {0} {1} in {2}", city.City, city.Location, city.Map);
+			Console.WriteLine(" - Started: {0} {1} in {2}", origin, location, map);
 			Utility.PopColor();
 
 			new WelcomeTimer(newChar).Start();
+		}
+
+		private static Map ParseStartMap(string value)
+		{
+			if (String.IsNullOrWhiteSpace(value))
+				return null;
+
+			try
+			{
+				return Map.Parse(value.Trim());
+			}
+			catch
+			{
+				Utility.PushColor(ConsoleColor.Yellow);
+				Console.WriteLine("Config: CharacterCreation.ForceStartingMap '{0}' is not a map name, the player keeps the city of the client", value);
+				Utility.PopColor();
+
+				return null;
+			}
+		}
+
+		private static Point3D ParseStartPoint(string value)
+		{
+			if (String.IsNullOrWhiteSpace(value))
+				return Point3D.Zero;
+
+			var parts = value.Split(',');
+
+			int x, y, z;
+
+			if (parts.Length < 2 || !Int32.TryParse(parts[0].Trim(), out x) || !Int32.TryParse(parts[1].Trim(), out y))
+			{
+				Utility.PushColor(ConsoleColor.Yellow);
+				Console.WriteLine("Config: CharacterCreation.ForceStartingLocation '{0}' is not a location, the player keeps the city of the client", value);
+				Utility.PopColor();
+
+				return Point3D.Zero;
+			}
+
+			if (parts.Length > 2 && Int32.TryParse(parts[2].Trim(), out z))
+				return new Point3D(x, y, z);
+
+			return new Point3D(x, y, AutoZ);
 		}
 
 		private static void FixStats(ref int str, ref int dex, ref int intel, int max)
