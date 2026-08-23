@@ -3933,6 +3933,11 @@ namespace Server.Items
 		{
 			if (from.Mounted)
 			{
+				if (from.Body.Type == BodyType.Human)
+				{
+					from.Animate(26, 5, 1, true, false, 0);
+				}
+
 				return;
 			}
 
@@ -3977,6 +3982,35 @@ namespace Server.Items
 		public virtual void PlaySwingAnimation(Mobile from)
 		{
 			int action;
+
+			if (from.Mounted && from.Body.Type == BodyType.Human)
+			{
+				switch (Animation)
+				{
+					default:
+					case WeaponAnimation.Wrestle:
+					case WeaponAnimation.Bash1H:
+					case WeaponAnimation.Pierce1H:
+					case WeaponAnimation.Slash1H:
+					case WeaponAnimation.Throwing:
+						action = 26;
+						break;
+					case WeaponAnimation.Bash2H:
+					case WeaponAnimation.Pierce2H:
+					case WeaponAnimation.Slash2H:
+						action = 29;
+						break;
+					case WeaponAnimation.ShootBow:
+						action = 27;
+						break;
+					case WeaponAnimation.ShootXBow:
+						action = 28;
+						break;
+				}
+
+				from.Animate(action, 7, 1, true, false, 0);
+				return;
+			}
 
             if (Core.SA)
             {

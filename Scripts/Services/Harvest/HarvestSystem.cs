@@ -424,7 +424,14 @@ namespace Server.Engines.Harvest
         {
             from.Direction = from.GetDirectionTo(loc);
 
-            if (!from.Mounted)
+            if (from.Mounted)
+            {
+                if (def.MountedEffectActions != null && def.MountedEffectActions.Length > 0)
+                {
+                    from.Animate(Utility.RandomList(def.MountedEffectActions), 5, 1, true, false, 0);
+                }
+            }
+            else
             {
                 if (Core.SA)
                 {

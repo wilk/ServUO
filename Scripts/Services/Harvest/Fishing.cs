@@ -71,6 +71,7 @@ namespace Server.Engines.Harvest
 
             // The fishing
             fish.EffectActions = new int[] { Core.SA ? 6 : 12 };
+            fish.MountedEffectActions = new int[] { 29 };
             fish.EffectSounds = new int[0];
             fish.EffectCounts = new int[] { 1 };
             fish.EffectDelay = TimeSpan.Zero;
