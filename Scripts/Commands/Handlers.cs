@@ -35,6 +35,7 @@ namespace Server.Commands
             Register("APN", AccessLevel.Counselor, new CommandEventHandler(APN_OnCommand));
 
             Register("Animate", AccessLevel.GameMaster, new CommandEventHandler(Animate_OnCommand));
+            Register("AnimateNew", AccessLevel.GameMaster, new CommandEventHandler(AnimateNew_OnCommand));
 
             Register("Cast", AccessLevel.Counselor, new CommandEventHandler(Cast_OnCommand));
 
@@ -467,6 +468,20 @@ namespace Server.Commands
             else
             {
                 e.Mobile.SendMessage("Format: Animate <action> <frameCount> <repeatCount> <forward> <repeat> <delay>");
+            }
+        }
+
+        [Usage("AnimateNew <type> <action> <delay>")]
+        [Description("Plays an animation with the new 0xE2 packet.")]
+        public static void AnimateNew_OnCommand(CommandEventArgs e)
+        {
+            if (e.Length == 3)
+            {
+                e.Mobile.Animate((AnimationType)e.GetInt32(0), e.GetInt32(1), e.GetInt32(2));
+            }
+            else
+            {
+                e.Mobile.SendMessage("Format: AnimateNew <type> <action> <delay>");
             }
         }
 

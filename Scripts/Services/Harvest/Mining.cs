@@ -60,6 +60,9 @@ namespace Server.Engines.Harvest
 
             // The digging effect
             oreAndStone.EffectActions = new int[] { Core.SA ? 3 : 11 };
+            oreAndStone.EffectActionDelay = 5;
+            oreAndStone.MountedEffectActions = new int[] { 29 };
+            oreAndStone.MountedEffectActionDelay = 5;
             oreAndStone.EffectSounds = new int[] { 0x125, 0x126 };
             oreAndStone.EffectCounts = new int[] { 1 };
             oreAndStone.EffectDelay = TimeSpan.FromSeconds(1.6);
@@ -154,6 +157,9 @@ namespace Server.Engines.Harvest
 
             // The digging effect
             sand.EffectActions = new int[] { Core.SA ? 3 : 11 };
+            sand.EffectActionDelay = 5;
+            sand.MountedEffectActions = new int[] { 29 };
+            sand.MountedEffectActionDelay = 5;
             sand.EffectSounds = new int[] { 0x125, 0x126 };
             sand.EffectCounts = new int[] { 6 };
             sand.EffectDelay = TimeSpan.FromSeconds(1.6);

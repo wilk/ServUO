@@ -25,6 +25,9 @@ namespace Server.Engines.Harvest
         public bool PlaceAtFeetIfFull { get; set; }
         public SkillName Skill { get; set; }
         public int[] EffectActions { get; set; }
+        public int EffectActionDelay { get; set; }
+        public int[] MountedEffectActions { get; set; }
+        public int MountedEffectActionDelay { get; set; }
         public int[] EffectCounts { get; set; }
         public int[] EffectSounds { get; set; }
         public TimeSpan EffectSoundDelay { get; set; }

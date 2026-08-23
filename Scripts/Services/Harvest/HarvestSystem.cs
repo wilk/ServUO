@@ -424,15 +424,22 @@ namespace Server.Engines.Harvest
         {
             from.Direction = from.GetDirectionTo(loc);
 
-            if (!from.Mounted)
+            if (from.Mounted)
+            {
+                if (def.MountedEffectActions != null && def.MountedEffectActions.Length > 0)
+                {
+                    from.Animate(Utility.RandomList(def.MountedEffectActions), 5, 1, true, false, def.MountedEffectActionDelay);
+                }
+            }
+            else
             {
                 if (Core.SA)
                 {
-                    from.Animate(AnimationType.Attack, Utility.RandomList(def.EffectActions));
+                    from.Animate(AnimationType.Attack, Utility.RandomList(def.EffectActions), def.EffectActionDelay);
                 }
                 else
                 {
-                    from.Animate(Utility.RandomList(def.EffectActions), 5, 1, true, false, 0);
+                    from.Animate(Utility.RandomList(def.EffectActions), 5, 1, true, false, def.EffectActionDelay);
                 }
             }
         }
