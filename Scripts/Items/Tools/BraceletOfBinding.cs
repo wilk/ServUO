@@ -152,6 +152,9 @@ namespace Server.Items
             }
         }
 
+        // A double-click binds or travels. It must not swap the worn bracelet.
+        public override bool EquipOnDoubleClick { get { return false; } }
+
         public override void OnDoubleClick(Mobile from)
         {
             BraceletOfBinding bound = Bound;

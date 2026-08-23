@@ -34,6 +34,9 @@ namespace Server.Items
 
         public override WeaponAnimation DefAnimation { get { return WeaponAnimation.Slash1H; } }
 
+        // The hoe plants only from the backpack.
+        public override bool EquipOnDoubleClick { get { return false; } }
+
         public override void OnDoubleClick(Mobile from)
         {
             if (IsChildOf(from.Backpack))

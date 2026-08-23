@@ -63,6 +63,9 @@ namespace Server.Items
             list.Add(1060584, this.m_UsesRemaining.ToString()); // uses remaining: ~1_val~
         }
 
+        // The amulet works only from the backpack.
+        public override bool EquipOnDoubleClick { get { return false; } }
+
         public override void OnDoubleClick(Mobile from)
         {
             base.OnDoubleClick(from);

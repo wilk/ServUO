@@ -1100,6 +1100,8 @@ namespace Server.Mobiles
 
 		public override int MaxWeight { get { return (((Core.ML && Race == Race.Human) ? 100 : 40) + (int)(3.5 * Str)); } }
 
+		public override int OverloadAllowance { get { return WeightOverloading.OverloadAllowance; } }
+
 		private int m_LastGlobalLight = -1, m_LastPersonalLight = -1;
 
 		public override void OnNetStateChanged()

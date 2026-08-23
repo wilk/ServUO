@@ -23,6 +23,9 @@ namespace Server.Items
         {
         }
 
+        // The torch toggles only from the backpack.
+        public override bool EquipOnDoubleClick { get { return false; } }
+
         public override void OnDoubleClick(Mobile from)
         {
             if (!IsChildOf(from.Backpack))

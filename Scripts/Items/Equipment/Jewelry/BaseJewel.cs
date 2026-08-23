@@ -557,6 +557,8 @@ namespace Server.Items
             m_TalismanProtection = new TalismanAttribute();
         }
 
+        public override bool EquipOnDoubleClick { get { return true; } }
+
         #region Stygian Abyss
         public override bool CanEquip(Mobile from)
         {

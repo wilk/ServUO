@@ -1621,7 +1621,7 @@ namespace Server
             return false;
         }
 
-        public virtual bool CheckConflictingLayer(Mobile m, Item item, Layer layer)
+        public virtual bool CheckConflictingLayer(Mobile m, Item item, Layer layer, bool message = true)
         {
             return (m_Layer == layer);
         }
@@ -1630,6 +1630,11 @@ namespace Server
         {
             return m_Layer != Layer.Invalid && m.FindItemOnLayer(m_Layer) == null && CheckEquip(m, true);
         }
+
+        /// <summary>
+        ///     Overridable. Method checked to see if a double-click equips this item. By default, this returns false.
+        /// </summary>
+        public virtual bool EquipOnDoubleClick { get { return false; } }
 
         public virtual bool CheckEquip(Mobile m, bool message)
         {

@@ -182,6 +182,9 @@ namespace Server.Items
             return false;
         }
 
+        // A double-click throws a shuriken. It must not swap the worn waist item.
+        public override bool EquipOnDoubleClick { get { return false; } }
+
         public override void OnDoubleClick(Mobile from)
         {
             NinjaWeapon.AttemptShoot((PlayerMobile)from, this);

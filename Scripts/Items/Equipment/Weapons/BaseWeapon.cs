@@ -995,21 +995,29 @@ namespace Server.Items
             }
 		}
 
-		public override bool CheckConflictingLayer(Mobile m, Item item, Layer layer)
+		public override bool CheckConflictingLayer(Mobile m, Item item, Layer layer, bool message = true)
 		{
-			if (base.CheckConflictingLayer(m, item, layer))
+			if (base.CheckConflictingLayer(m, item, layer, message))
 			{
 				return true;
 			}
 
 			if (Layer == Layer.TwoHanded && layer == Layer.OneHanded)
 			{
-                m.LocalOverheadMessage(MessageType.Regular, 0x3B2, 500214); // You already have something in both hands.
+				if (message)
+				{
+					m.LocalOverheadMessage(MessageType.Regular, 0x3B2, 500214); // You already have something in both hands.
+				}
+
                 return true;
 			}
 			else if (Layer == Layer.OneHanded && layer == Layer.TwoHanded && !(item is BaseShield) && !(item is BaseEquipableLight))
 			{
-                m.LocalOverheadMessage(MessageType.Regular, 0x3B2, 500215); // // You can only wield one weapon at a time.
+				if (message)
+				{
+					m.LocalOverheadMessage(MessageType.Regular, 0x3B2, 500215); // // You can only wield one weapon at a time.
+				}
+
 				return true;
 			}
 
@@ -1032,6 +1040,8 @@ namespace Server.Items
 		#region SA
 		public virtual bool CanBeWornByGargoyles { get { return false; } }
 		#endregion
+
+		public override bool EquipOnDoubleClick { get { return true; } }
 
 		public override bool CanEquip(Mobile from)
 		{

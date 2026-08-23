@@ -4426,6 +4426,11 @@ namespace Server
 
 			if (okay)
 			{
+				if (item.EquipOnDoubleClick && item.Parent != this && HandleEquipOnUse(item))
+				{
+					return;
+				}
+
 				if (!item.Deleted)
 				{
 					item.OnItemUsed(this, item);
@@ -6743,6 +6748,8 @@ namespace Server
 		{ }
 
 		public virtual int MaxWeight { get { return int.MaxValue; } }
+
+		public virtual int OverloadAllowance { get { return 0; } }
 
 		public virtual void Obtained(Item item)
 		{
@@ -11084,6 +11091,136 @@ namespace Server
 			}
 
 			return false;
+		}
+
+		/// <summary>
+		///     Overridable. Equips item as a reaction to a double-click. Moves every item that blocks the
+		///     layer of item to the backpack, then equips item. A failed equip still uses up the double-click,
+		///     because the refusal message answers the player. The old action must not follow that message.
+		/// </summary>
+		/// <returns>True if the double-click is used up, false if the equip rule does not apply to item.</returns>
+		public virtual bool HandleEquipOnUse(Item item)
+		{
+			if (item.Layer < Layer.FirstValid || item.Layer > Layer.LastUserValid)
+			{
+				return false;
+			}
+
+			if (item.Parent == this)
+			{
+				return false;
+			}
+
+			if (item.Parent == null)
+			{
+				if (!item.Movable)
+				{
+					return false;
+				}
+
+				var loc = item.GetWorldLocation();
+
+				if (!InRange(loc, 2) || !InLOS(loc))
+				{
+					LocalOverheadMessage(MessageType.Regular, 0x3E9, 1019045); // I can't reach that
+					return true;
+				}
+			}
+			else if (Backpack == null || !item.IsChildOf(Backpack))
+			{
+				// The backpack is the only container in scope. The bank box stays out.
+				return false;
+			}
+
+			var blockers = new List<Item>();
+
+			var onLayer = FindItemOnLayer(item.Layer);
+
+			if (onLayer != null)
+			{
+				blockers.Add(onLayer);
+			}
+
+			for (var i = 0; i < m_Items.Count; i++)
+			{
+				var worn = m_Items[i];
+
+				if (worn == onLayer || worn == item)
+				{
+					continue;
+				}
+
+				// The probe stays silent. A blocker moves to the backpack, so a refusal message is wrong here.
+				if (worn.CheckConflictingLayer(this, item, item.Layer, false) ||
+					item.CheckConflictingLayer(this, worn, worn.Layer, false))
+				{
+					blockers.Add(worn);
+				}
+			}
+
+			foreach (var blocker in blockers)
+			{
+				if (!blocker.Movable)
+				{
+					SendLocalizedMessage(1071936); // You cannot equip that.
+					return true;
+				}
+			}
+
+			// Staff carry no weight limit. The overload rule of the shard makes the same exception.
+			if (item.Parent == null && !IsStaff() &&
+				BodyWeight + TotalWeight + item.TotalWeight > MaxWeight + OverloadAllowance)
+			{
+				SendLocalizedMessage(500109); // You are too fatigued to move, because you are carrying too much weight!
+				return true;
+			}
+
+			// A blocker needs the backpack. With no blocker the equip needs no container at all.
+			if (blockers.Count > 0)
+			{
+				if (Backpack == null)
+				{
+					SendLocalizedMessage(1071936); // You cannot equip that.
+					return true;
+				}
+
+				// Count the blockers that wait for the same backpack. One check for each is not enough.
+				var plusItems = 0;
+				var plusWeight = 0;
+
+				foreach (var blocker in blockers)
+				{
+					if (!Backpack.CheckHold(this, blocker, true, true, plusItems, plusWeight))
+					{
+						return true;
+					}
+
+					plusItems += blocker.TotalItems + (blocker.IsVirtualItem ? 0 : 1);
+					plusWeight += blocker.TotalWeight + blocker.PileWeight;
+				}
+
+				foreach (var blocker in blockers)
+				{
+					Backpack.AddItem(blocker);
+				}
+			}
+
+			if (EquipItem(item))
+			{
+				return true;
+			}
+
+			foreach (var blocker in blockers)
+			{
+				// Take a blocker back only if it still lies where the swap put it.
+				if (!blocker.Deleted && blocker.Parent == Backpack)
+				{
+					AddItem(blocker);
+				}
+			}
+
+			// CanEquip already told the player why. Do not run the old action on top of that message.
+			return true;
 		}
 
 		internal int m_TypeRef;
