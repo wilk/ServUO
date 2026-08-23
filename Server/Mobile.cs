@@ -4426,7 +4426,7 @@ namespace Server
 
 			if (okay)
 			{
-				if (item.EquipOnDoubleClick && item.Parent != this && TryEquipOnUse(item))
+				if (item.EquipOnDoubleClick && item.Parent != this && HandleEquipOnUse(item))
 				{
 					return;
 				}
@@ -11094,11 +11094,12 @@ namespace Server
 		}
 
 		/// <summary>
-		///     Overridable. Tries to equip item as a reaction to a double-click. Moves every item that blocks
-		///     the layer of item to the backpack, then equips item. On failure, no item moves.
+		///     Overridable. Equips item as a reaction to a double-click. Moves every item that blocks the
+		///     layer of item to the backpack, then equips item. A failed equip still uses up the double-click,
+		///     because the refusal message answers the player. The old action must not follow that message.
 		/// </summary>
-		/// <returns>True if item is now equipped, false if not.</returns>
-		public virtual bool TryEquipOnUse(Item item)
+		/// <returns>True if the double-click is used up, false if the equip rule does not apply to item.</returns>
+		public virtual bool HandleEquipOnUse(Item item)
 		{
 			if (item.Layer < Layer.FirstValid || item.Layer > Layer.LastUserValid)
 			{
@@ -11122,7 +11123,7 @@ namespace Server
 				if (!InRange(loc, 2) || !InLOS(loc))
 				{
 					LocalOverheadMessage(MessageType.Regular, 0x3E9, 1019045); // I can't reach that
-					return false;
+					return true;
 				}
 			}
 			else if (Backpack == null || !item.IsChildOf(Backpack))
@@ -11161,7 +11162,8 @@ namespace Server
 			{
 				if (!blocker.Movable)
 				{
-					return false;
+					SendLocalizedMessage(1071936); // You cannot equip that.
+					return true;
 				}
 			}
 
@@ -11170,32 +11172,37 @@ namespace Server
 				BodyWeight + TotalWeight + item.TotalWeight > MaxWeight + OverloadAllowance)
 			{
 				SendLocalizedMessage(500109); // You are too fatigued to move, because you are carrying too much weight!
-				return false;
+				return true;
 			}
 
-			if (Backpack == null)
+			// A blocker needs the backpack. With no blocker the equip needs no container at all.
+			if (blockers.Count > 0)
 			{
-				return false;
-			}
-
-			// Count the blockers that wait for the same backpack. One check for each is not enough.
-			var plusItems = 0;
-			var plusWeight = 0;
-
-			foreach (var blocker in blockers)
-			{
-				if (!Backpack.CheckHold(this, blocker, true, true, plusItems, plusWeight))
+				if (Backpack == null)
 				{
-					return false;
+					SendLocalizedMessage(1071936); // You cannot equip that.
+					return true;
 				}
 
-				plusItems += blocker.TotalItems + (blocker.IsVirtualItem ? 0 : 1);
-				plusWeight += blocker.TotalWeight + blocker.PileWeight;
-			}
+				// Count the blockers that wait for the same backpack. One check for each is not enough.
+				var plusItems = 0;
+				var plusWeight = 0;
 
-			foreach (var blocker in blockers)
-			{
-				Backpack.AddItem(blocker);
+				foreach (var blocker in blockers)
+				{
+					if (!Backpack.CheckHold(this, blocker, true, true, plusItems, plusWeight))
+					{
+						return true;
+					}
+
+					plusItems += blocker.TotalItems + (blocker.IsVirtualItem ? 0 : 1);
+					plusWeight += blocker.TotalWeight + blocker.PileWeight;
+				}
+
+				foreach (var blocker in blockers)
+				{
+					Backpack.AddItem(blocker);
+				}
 			}
 
 			if (EquipItem(item))
@@ -11212,7 +11219,8 @@ namespace Server
 				}
 			}
 
-			return false;
+			// CanEquip already told the player why. Do not run the old action on top of that message.
+			return true;
 		}
 
 		internal int m_TypeRef;
