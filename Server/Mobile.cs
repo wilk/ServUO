@@ -6866,6 +6866,11 @@ namespace Server
 
         public virtual void Animate(AnimationType type, int action)
         {
+            Animate(type, action, Utility.Random(0, 60));
+        }
+
+        public virtual void Animate(AnimationType type, int action, int delay)
+        {
             Map map = m_Map;
 
             if (map != null)
@@ -6884,7 +6889,7 @@ namespace Server
 
                         if (p == null)
                         {
-                            p = Packet.Acquire(new NewMobileAnimation(this, type, action, Utility.Random(0, 60)));
+                            p = Packet.Acquire(new NewMobileAnimation(this, type, action, delay));
                         }
 
                         state.Send(p);

@@ -65,7 +65,9 @@ namespace Server.Engines.Harvest
 
             // The chopping effect
             lumber.EffectActions = new int[] { Core.SA ? 7 : 13 };
+            lumber.EffectActionDelay = 5;
             lumber.MountedEffectActions = new int[] { 29 };
+            lumber.MountedEffectActionDelay = 5;
             lumber.EffectSounds = new int[] { 0x13E };
             lumber.EffectCounts = (Core.AOS ? new int[] { 1 } : new int[] { 1, 2, 2, 2, 3 });
             lumber.EffectDelay = TimeSpan.FromSeconds(1.6);
