@@ -1652,7 +1652,7 @@ namespace Server.Items
         // Issue #13: the swing animation plays first. The hit sound, the hurt
         // animation and the damage follow HitDelay later. Both values are
         // provisional. The shard owner tunes them in game.
-        public static TimeSpan HitDelay = TimeSpan.FromMilliseconds(500);
+        public static TimeSpan HitDelay = TimeSpan.FromMilliseconds(800);
         public static int SwingAnimationDelay = 5;
 
         // Issue #13, open point 1: id 26 moves the wrong arm for a mounted
