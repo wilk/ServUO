@@ -11125,8 +11125,9 @@ namespace Server
 					return false;
 				}
 			}
-			else if (item.RootParent != this)
+			else if (Backpack == null || !item.IsChildOf(Backpack))
 			{
+				// The backpack is the only container in scope. The bank box stays out.
 				return false;
 			}
 
@@ -11148,7 +11149,9 @@ namespace Server
 					continue;
 				}
 
-				if (worn.CheckConflictingLayer(this, item, item.Layer) || item.CheckConflictingLayer(this, worn, worn.Layer))
+				// The probe stays silent. A blocker moves to the backpack, so a refusal message is wrong here.
+				if (worn.CheckConflictingLayer(this, item, item.Layer, false) ||
+					item.CheckConflictingLayer(this, worn, worn.Layer, false))
 				{
 					blockers.Add(worn);
 				}
@@ -11173,12 +11176,19 @@ namespace Server
 				return false;
 			}
 
+			// Count the blockers that wait for the same backpack. One check for each is not enough.
+			var plusItems = 0;
+			var plusWeight = 0;
+
 			foreach (var blocker in blockers)
 			{
-				if (!Backpack.CheckHold(this, blocker, true, true, 0, 0))
+				if (!Backpack.CheckHold(this, blocker, true, true, plusItems, plusWeight))
 				{
 					return false;
 				}
+
+				plusItems += blocker.TotalItems + (blocker.IsVirtualItem ? 0 : 1);
+				plusWeight += blocker.TotalWeight + blocker.PileWeight;
 			}
 
 			foreach (var blocker in blockers)
@@ -11193,7 +11203,11 @@ namespace Server
 
 			foreach (var blocker in blockers)
 			{
-				AddItem(blocker);
+				// Take a blocker back only if it still lies where the swap put it.
+				if (!blocker.Deleted && blocker.Parent == Backpack)
+				{
+					AddItem(blocker);
+				}
 			}
 
 			return false;

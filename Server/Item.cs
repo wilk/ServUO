@@ -1621,7 +1621,7 @@ namespace Server
             return false;
         }
 
-        public virtual bool CheckConflictingLayer(Mobile m, Item item, Layer layer)
+        public virtual bool CheckConflictingLayer(Mobile m, Item item, Layer layer, bool message = true)
         {
             return (m_Layer == layer);
         }

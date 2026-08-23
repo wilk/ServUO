@@ -26,6 +26,9 @@ namespace Server.Items
             Attributes.WeaponDamage = 75;
         }
 
+        // The ring opens the bonus gump only from the backpack.
+        public override bool EquipOnDoubleClick { get { return false; } }
+
         public override void OnDoubleClick(Mobile m)
         {
             if (IsChildOf(m.Backpack) && m is PlayerMobile && !HasSkillBonus)

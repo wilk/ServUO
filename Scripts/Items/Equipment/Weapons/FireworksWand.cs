@@ -50,6 +50,9 @@ namespace Server.Items
             list.Add(1060741, this.m_Charges.ToString()); // charges: ~1_val~
         }
 
+        // A double-click launches the firework. It must not swap the worn weapon.
+        public override bool EquipOnDoubleClick { get { return false; } }
+
         public override void OnDoubleClick(Mobile from)
         {
             this.BeginLaunch(from, true);
