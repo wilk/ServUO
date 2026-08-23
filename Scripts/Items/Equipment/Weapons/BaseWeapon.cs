@@ -3933,7 +3933,7 @@ namespace Server.Items
 		{
 			if (from.Mounted)
 			{
-				if (from.Body.Type == BodyType.Human)
+				if (from.Body.Type == BodyType.Human && !from.Body.IsGargoyle)
 				{
 					from.Animate(26, 5, 1, true, false, 0);
 				}
@@ -3983,7 +3983,7 @@ namespace Server.Items
 		{
 			int action;
 
-			if (from.Mounted && from.Body.Type == BodyType.Human)
+			if (from.Mounted && from.Body.Type == BodyType.Human && !from.Body.IsGargoyle)
 			{
 				switch (Animation)
 				{
