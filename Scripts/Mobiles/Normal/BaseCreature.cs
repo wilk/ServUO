@@ -1793,13 +1793,40 @@ namespace Server.Mobiles
             }
         }
 
+        public virtual bool AttacksOnSight
+        {
+            get
+            {
+                // A creature with no AI, a healer or a vendor never starts a fight.
+                if (AIObject == null || m_CurrentAI == AIType.AI_Healer || m_CurrentAI == AIType.AI_Vendor)
+                {
+                    return false;
+                }
+
+                switch (FightMode)
+                {
+                    case FightMode.None:
+                    case FightMode.Aggressor:
+                    case FightMode.Good:
+                        return false;
+                    default:
+                        return true;
+                }
+            }
+        }
+
         public virtual bool AlwaysMurderer
         {
             get
             {
                 XmlData x = (XmlData)XmlAttach.FindAttachment(this, typeof(XmlData), "Notoriety");
 
-                return x != null && x.Data == "red";
+                if (x != null)
+                {
+                    return x.Data == "red";
+                }
+
+                return !Controlled && !Summoned && Karma < 0 && AttacksOnSight;
             }
         }
 
