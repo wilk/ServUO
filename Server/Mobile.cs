@@ -11165,7 +11165,9 @@ namespace Server
 				}
 			}
 
-			if (item.Parent == null && BodyWeight + TotalWeight + item.TotalWeight > MaxWeight + OverloadAllowance)
+			// Staff carry no weight limit. The overload rule of the shard makes the same exception.
+			if (item.Parent == null && !IsStaff() &&
+				BodyWeight + TotalWeight + item.TotalWeight > MaxWeight + OverloadAllowance)
 			{
 				SendLocalizedMessage(500109); // You are too fatigued to move, because you are carrying too much weight!
 				return false;
