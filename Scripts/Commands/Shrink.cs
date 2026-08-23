@@ -28,6 +28,12 @@ namespace Server.Commands
 
             protected override void OnTarget(Mobile from, object targeted)
             {
+                if (targeted is PlayerMobile)
+                {
+                    from.SendMessage("You may not shrink a player.");
+                    return;
+                }
+
                 if (!(targeted is BaseCreature))
                 {
                     from.SendMessage("You may only shrink a creature.");
@@ -36,21 +42,24 @@ namespace Server.Commands
 
                 var creature = (BaseCreature)targeted;
 
-                if (targeted is PlayerMobile)
-                {
-                    from.SendMessage("You may not shrink a player.");
-                }
-                else if (creature is BaseVendor)
+                // A stabled pet and a ridden mount are both already on the internal map.
+                // Both checks must come before the internal-map check, or the caller gets
+                // the wrong message.
+                if (creature is BaseVendor)
                 {
                     from.SendMessage("You may not shrink a vendor.");
-                }
-                else if (creature.Map == Map.Internal)
-                {
-                    from.SendMessage("That creature is already shrunk.");
                 }
                 else if (creature.IsStabled)
                 {
                     from.SendMessage("You may not shrink a stabled creature.");
+                }
+                else if (creature is BaseMount && ((BaseMount)creature).Rider != null)
+                {
+                    from.SendMessage("You may not shrink a mounted creature.");
+                }
+                else if (creature.Map == Map.Internal)
+                {
+                    from.SendMessage("That creature is already shrunk.");
                 }
                 else if (creature.Summoned)
                 {
@@ -60,15 +69,31 @@ namespace Server.Commands
                 {
                     from.SendMessage("You may not shrink a dead creature.");
                 }
-                else if (creature is BaseMount && ((BaseMount)creature).Rider != null)
+                else if (creature.IsChampionSpawn)
                 {
-                    from.SendMessage("You may not shrink a mounted creature.");
+                    // The champion spawn counts a kill by Deleted. Internalize() never sets
+                    // Deleted, so a shrunk minion or boss stops the spawn for good.
+                    from.SendMessage("You may not shrink a champion spawn creature.");
+                }
+                else if (creature is BaseEscortable && ((BaseEscortable)creature).GetEscorter() != null)
+                {
+                    // An escortable that changes map loses its escorter and deletes itself.
+                    from.SendMessage("You may not shrink a creature that is being escorted.");
+                }
+                else if (creature.Combatant != null || creature.Aggressors.Count > 0 || creature.Aggressed.Count > 0)
+                {
+                    from.SendMessage("That creature is busy fighting.");
                 }
                 else
                 {
                     var item = new ShrunkenCreature(creature);
 
                     item.MoveToWorld(creature.Location, creature.Map);
+
+                    // Clear the orders first, or the creature keeps the old target when it
+                    // comes back. HitchingPost.EndStable does the same.
+                    creature.ControlTarget = null;
+                    creature.ControlOrder = OrderType.Stay;
 
                     creature.Internalize();
 

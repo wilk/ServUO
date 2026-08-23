@@ -1,4 +1,5 @@
 using Server.Mobiles;
+using Server.Multis;
 
 namespace Server.Items
 {
@@ -23,6 +24,13 @@ namespace Server.Items
         public ShrunkenCreature(Serial serial)
             : base(serial)
         {
+        }
+
+        // The item holds a live creature. Decay would delete the item on the next world
+        // save, and OnAfterDelete would then delete the creature with it.
+        public override bool Decays
+        {
+            get { return false; }
         }
 
         public override void GetProperties(ObjectPropertyList list)
@@ -61,6 +69,19 @@ namespace Server.Items
             {
                 loc = GetWorldLocation();
                 map = Map;
+            }
+
+            if (map == null || map == Map.Internal)
+            {
+                return;
+            }
+
+            BaseHouse house = BaseHouse.FindHouseAt(loc, map, 16);
+
+            if (house != null && !house.IsOwner(from) && from.AccessLevel < AccessLevel.GameMaster)
+            {
+                from.SendMessage("You may not release a creature inside a house you do not own.");
+                return;
             }
 
             m_Creature.MoveToWorld(loc, map);
