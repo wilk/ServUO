@@ -53,6 +53,11 @@ namespace Server
 		int MaxRange { get; }
 		void OnBeforeSwing(Mobile attacker, IDamageable damageable);
         TimeSpan OnSwing(Mobile attacker, IDamageable damageable);
+
+        // Issue #13: the combat timer calls this method instead of OnSwing.
+        // It lets the weapon delay the hit until the swing animation ends.
+        // A caller that reads its own state after the swing keeps OnSwing.
+        TimeSpan OnSwingTimer(Mobile attacker, IDamageable damageable);
 		void GetStatusDamage(Mobile from, out int min, out int max);
 		TimeSpan GetDelay(Mobile attacker);
 	}

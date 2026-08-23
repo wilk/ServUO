@@ -71,6 +71,11 @@ namespace Server.Items
             if (nextShoot <= Core.TickCount ||
 				(Core.AOS && WeaponAbility.GetCurrentAbility(attacker) is MovingShot))
 			{
+				// Issue #13: read the flag once and clear it. Only the combat
+				// timer defers the hit. A special move keeps the immediate hit.
+				bool defer = m_DeferNextSwing;
+				m_DeferNextSwing = false;
+
 				TimeSpan swingDelay = GetDelay(attacker);
 
 				bool canSwing = true;
@@ -96,14 +101,26 @@ namespace Server.Items
 					// tick, not the deferred hit, so the ammo count does not wait.
 					if (OnFired(attacker, damageable))
 					{
-                        PlaySwingAnimation(attacker);
+                        if (defer)
+                        {
+                            PlaySwingAnimation(attacker);
 
-                        // Issue #13: the hit resolves HitDelay after the swing
-                        // animation starts. Clamp the delay below the swing
-                        // delay, because the pre-AOS swing delay has no floor.
-                        TimeSpan hitDelay = HitDelay < swingDelay ? HitDelay : swingDelay;
+                            // Issue #13: the hit resolves HitDelay after the
+                            // swing animation starts. Clamp the delay below the
+                            // swing delay, because the pre-AOS swing delay has
+                            // no floor.
+                            TimeSpan hitDelay = HitDelay < swingDelay ? HitDelay : swingDelay;
 
-                        Timer.DelayCall(hitDelay, () => ResolveSwing(attacker, damageable, 1.0));
+                            Timer.DelayCall(hitDelay, () => ResolveSwing(attacker, damageable, 1.0));
+                        }
+                        else if (CheckHit(attacker, damageable))
+                        {
+                            OnHit(attacker, damageable);
+                        }
+                        else
+                        {
+                            OnMiss(attacker, damageable);
+                        }
 					}
 				}
 
