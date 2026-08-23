@@ -31,6 +31,8 @@ namespace Server.Items
             return false;
         }
 
+        public override bool EquipOnDoubleClick { get { return false; } }
+
         public override void OnDoubleClick(Mobile from)
         {
             if (IsModified)

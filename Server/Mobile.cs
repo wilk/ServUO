@@ -4426,6 +4426,11 @@ namespace Server
 
 			if (okay)
 			{
+				if (item.EquipOnDoubleClick && item.Parent != this && TryEquipOnUse(item))
+				{
+					return;
+				}
+
 				if (!item.Deleted)
 				{
 					item.OnItemUsed(this, item);
@@ -6743,6 +6748,8 @@ namespace Server
 		{ }
 
 		public virtual int MaxWeight { get { return int.MaxValue; } }
+
+		public virtual int OverloadAllowance { get { return 0; } }
 
 		public virtual void Obtained(Item item)
 		{
@@ -11081,6 +11088,112 @@ namespace Server
 
 				AddItem(item);
 				return true;
+			}
+
+			return false;
+		}
+
+		/// <summary>
+		///     Overridable. Tries to equip item as a reaction to a double-click. Moves every item that blocks
+		///     the layer of item to the backpack, then equips item. On failure, no item moves.
+		/// </summary>
+		/// <returns>True if item is now equipped, false if not.</returns>
+		public virtual bool TryEquipOnUse(Item item)
+		{
+			if (item.Layer < Layer.FirstValid || item.Layer > Layer.LastUserValid)
+			{
+				return false;
+			}
+
+			if (item.Parent == this)
+			{
+				return false;
+			}
+
+			if (item.Parent == null)
+			{
+				if (!item.Movable)
+				{
+					return false;
+				}
+
+				var loc = item.GetWorldLocation();
+
+				if (!InRange(loc, 2) || !InLOS(loc))
+				{
+					LocalOverheadMessage(MessageType.Regular, 0x3E9, 1019045); // I can't reach that
+					return false;
+				}
+			}
+			else if (item.RootParent != this)
+			{
+				return false;
+			}
+
+			var blockers = new List<Item>();
+
+			var onLayer = FindItemOnLayer(item.Layer);
+
+			if (onLayer != null)
+			{
+				blockers.Add(onLayer);
+			}
+
+			for (var i = 0; i < m_Items.Count; i++)
+			{
+				var worn = m_Items[i];
+
+				if (worn == onLayer || worn == item)
+				{
+					continue;
+				}
+
+				if (worn.CheckConflictingLayer(this, item, item.Layer) || item.CheckConflictingLayer(this, worn, worn.Layer))
+				{
+					blockers.Add(worn);
+				}
+			}
+
+			foreach (var blocker in blockers)
+			{
+				if (!blocker.Movable)
+				{
+					return false;
+				}
+			}
+
+			if (item.Parent == null && BodyWeight + TotalWeight + item.TotalWeight > MaxWeight + OverloadAllowance)
+			{
+				SendLocalizedMessage(500109); // You are too fatigued to move, because you are carrying too much weight!
+				return false;
+			}
+
+			if (Backpack == null)
+			{
+				return false;
+			}
+
+			foreach (var blocker in blockers)
+			{
+				if (!Backpack.CheckHold(this, blocker, true, true, 0, 0))
+				{
+					return false;
+				}
+			}
+
+			foreach (var blocker in blockers)
+			{
+				Backpack.AddItem(blocker);
+			}
+
+			if (EquipItem(item))
+			{
+				return true;
+			}
+
+			foreach (var blocker in blockers)
+			{
+				AddItem(blocker);
 			}
 
 			return false;

@@ -2413,6 +2413,8 @@ namespace Server.Items
             }
         }
 
+        public override bool EquipOnDoubleClick { get { return true; } }
+
         public override bool CanEquip(Mobile from)
         {
             if (!Ethics.Ethic.CheckEquip(from, this))
