@@ -104,26 +104,44 @@ namespace Server.Items
                 return;
             }
 
+            // Read the old master before the claim. A player who restores his own pet keeps
+            // the bond. Only a change of master breaks it.
+            Mobile oldMaster = m_Creature.ControlMaster;
+
             m_Creature.MoveToWorld(loc, map);
 
             if (!m_Creature.SetControlMaster(from))
             {
-                // SetControlMaster runs its own follower check and refuses on the same
-                // condition we checked above. For staff we must still claim the creature,
-                // so set the control fields by hand and skip that limit.
                 if (staffBypass)
                 {
+                    // SetControlMaster refuses on the follower limit only. Staff pass that
+                    // limit, so claim the creature by hand. Repeat the side effects of
+                    // SetControlMaster that change how the pet behaves.
+                    m_Creature.CurrentWayPoint = null;
+                    m_Creature.Home = Point3D.Zero;
+
                     m_Creature.ControlMaster = from;
                     m_Creature.Controlled = true;
                     m_Creature.ControlTarget = null;
                     m_Creature.ControlOrder = OrderType.Come;
+                    m_Creature.Guild = null;
+
+                    m_Creature.UpdateMasteryInfo();
+
+                    m_Creature.AdjustSpeeds();
+                    m_Creature.CurrentSpeed = m_Creature.ActiveSpeed;
+
+                    // The new master cannot hurt the pet for three seconds, as after a tame.
+                    m_Creature.RecentSetControl = true;
+                    Timer.DelayCall(TimeSpan.FromSeconds(3), () => m_Creature.RecentSetControl = false);
+
                     m_Creature.InvalidateProperties();
                 }
                 else
                 {
-                    // Should not happen: the pre-check above already matches this refusal.
-                    // Send the creature back to the internal map and keep the statuette, so
-                    // a refused restore never leaves a loose, unclaimed creature in the world.
+                    // A safety net. Today SetControlMaster refuses on the follower limit only,
+                    // and the check above already covers that. The branch stays, so a new
+                    // refusal condition inside SetControlMaster cannot leave a loose creature.
                     m_Creature.ControlOrder = OrderType.Stay;
                     m_Creature.Internalize();
                     from.SendLocalizedMessage(1049607); // You have too many followers to control that creature.
@@ -131,7 +149,10 @@ namespace Server.Items
                 }
             }
 
-            m_Creature.IsBonded = false;
+            if (oldMaster != from)
+            {
+                m_Creature.IsBonded = false;
+            }
 
             if (!m_Creature.Owners.Contains(from) && m_Creature.Owners.Count < BaseCreature.MaxOwners)
             {
@@ -159,6 +180,11 @@ namespace Server.Items
                 return;
             }
 
+            // Dupe.CopyProperties already copied our Creature reference onto the copy, so the
+            // copy points at OUR live creature. Clear it first. Without this, copy.Delete()
+            // below reaches OnAfterDelete and deletes the original creature.
+            copy.Creature = null;
+
             if (m_Creature == null || m_Creature.Deleted)
             {
                 copy.Delete();
@@ -169,12 +195,16 @@ namespace Server.Items
 
             if (clone == null)
             {
+                // The creature type has no constructor with zero parameters. Drop the copy.
+                // Dupe.cs still reports "Done", because this method cannot answer the caller.
+                Console.WriteLine(
+                    "ShrunkenCreature: cannot dupe. {0} has no constructor with zero parameters.",
+                    m_Creature.GetType().Name);
+
                 copy.Delete();
                 return;
             }
 
-            // Dupe.CopyProperties already copied our Creature reference onto the copy.
-            // Overwrite it here with the clone, so the two statuettes never share one creature.
             copy.Creature = clone;
             copy.InvalidateProperties();
         }
@@ -200,45 +230,58 @@ namespace Server.Items
                 return null;
             }
 
-            clone.Name = source.Name;
-            clone.Hue = source.Hue;
-            clone.Body = source.Body;
-            clone.BaseSoundID = source.BaseSoundID;
-
-            clone.RawStr = source.RawStr;
-            clone.RawDex = source.RawDex;
-            clone.RawInt = source.RawInt;
-
-            clone.HitsMaxSeed = source.HitsMaxSeed;
-            clone.StamMaxSeed = source.StamMaxSeed;
-            clone.ManaMaxSeed = source.ManaMaxSeed;
-
-            for (var i = 0; i < source.Skills.Length; i++)
+            // The Mobile constructor already ran World.AddMobile(clone). A throw below would
+            // leave the clone in the world with nothing pointing at it, and every later save
+            // would keep it. Delete the clone on any failure.
+            try
             {
-                clone.Skills[i].Base = source.Skills[i].Base;
+                clone.Name = source.Name;
+                clone.Hue = source.Hue;
+                clone.Body = source.Body;
+                clone.BaseSoundID = source.BaseSoundID;
+
+                clone.RawStr = source.RawStr;
+                clone.RawDex = source.RawDex;
+                clone.RawInt = source.RawInt;
+
+                clone.HitsMaxSeed = source.HitsMaxSeed;
+                clone.StamMaxSeed = source.StamMaxSeed;
+                clone.ManaMaxSeed = source.ManaMaxSeed;
+
+                for (var i = 0; i < source.Skills.Length; i++)
+                {
+                    // Set the cap first. The clone must keep the growth room of the source.
+                    clone.Skills[i].Cap = source.Skills[i].Cap;
+                    clone.Skills[i].Base = source.Skills[i].Base;
+                }
+
+                clone.DamageMin = source.DamageMin;
+                clone.DamageMax = source.DamageMax;
+
+                clone.PhysicalResistanceSeed = source.PhysicalResistanceSeed;
+                clone.FireResistSeed = source.FireResistSeed;
+                clone.ColdResistSeed = source.ColdResistSeed;
+                clone.PoisonResistSeed = source.PoisonResistSeed;
+                clone.EnergyResistSeed = source.EnergyResistSeed;
+
+                clone.ControlSlots = source.ControlSlots;
+                clone.Tamable = source.Tamable;
+                clone.MinTameSkill = source.MinTameSkill;
+
+                // A new Mobile has Map == null. OnAfterDelete only deletes a creature that sits
+                // on Map.Internal, so without this call the clone would leak when its statuette
+                // is deleted before ever being restored.
+                clone.Internalize();
+
+                clone.Hits = clone.HitsMax;
+                clone.Stam = clone.StamMax;
+                clone.Mana = clone.ManaMax;
             }
-
-            clone.DamageMin = source.DamageMin;
-            clone.DamageMax = source.DamageMax;
-
-            clone.PhysicalResistanceSeed = source.PhysicalResistanceSeed;
-            clone.FireResistSeed = source.FireResistSeed;
-            clone.ColdResistSeed = source.ColdResistSeed;
-            clone.PoisonResistSeed = source.PoisonResistSeed;
-            clone.EnergyResistSeed = source.EnergyResistSeed;
-
-            clone.ControlSlots = source.ControlSlots;
-            clone.Tamable = source.Tamable;
-            clone.MinTameSkill = source.MinTameSkill;
-
-            // A new Mobile has Map == null. OnAfterDelete only deletes a creature that sits
-            // on Map.Internal, so without this call the clone would leak when its statuette
-            // is deleted before ever being restored.
-            clone.Internalize();
-
-            clone.Hits = clone.HitsMax;
-            clone.Stam = clone.StamMax;
-            clone.Mana = clone.ManaMax;
+            catch
+            {
+                clone.Delete();
+                return null;
+            }
 
             return clone;
         }
