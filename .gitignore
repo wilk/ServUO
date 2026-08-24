@@ -43,3 +43,6 @@
 
 !/Data/*
 !/bin/rosyln/*
+
+# Git worktrees for feature branches
+/.worktrees/
