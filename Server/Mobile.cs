@@ -808,6 +808,7 @@ namespace Server
 		private int m_BaseSoundID;
 		private int m_VirtualArmor;
 		private bool m_Squelched;
+		private bool m_SuppressCombatantHarmful;
 		private int m_MagicDamageAbsorb;
 		private int m_Followers, m_FollowersMax;
 		private List<object> _actions; // prefer List<object> over ArrayList for more specific profiling information
@@ -2171,7 +2172,16 @@ namespace Server
                     Warmode = true;
                 }
 
-				Combatant = e;
+				m_SuppressCombatantHarmful = true;
+
+				try
+				{
+					Combatant = e;
+				}
+				finally
+				{
+					m_SuppressCombatantHarmful = false;
+				}
 			}
 		}
 
@@ -2249,7 +2259,7 @@ namespace Server
 						m_CombatTimer.Start();
 					}
 
-					if (m_Combatant != null && CanBeHarmful(m_Combatant, false))
+					if (!m_SuppressCombatantHarmful && m_Combatant != null && CanBeHarmful(m_Combatant, false))
 					{
 						DoHarmful(m_Combatant);
 
