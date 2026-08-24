@@ -2967,7 +2967,26 @@ namespace Server.Mobiles
 
 		public virtual bool IsHostile(Mobile from, FightMode mode)
 		{
-			return m_Mobile.Combatant == from;
+			if (m_Mobile.Combatant == from)
+			{
+				return true;
+			}
+
+			// A real blow from "from" lands it in our Aggressors list, even
+			// while we are busy fighting someone else. A target selection
+			// alone never does this, so this still never wakes a creature
+			// on a click with no blow.
+			var aggressors = m_Mobile.Aggressors;
+
+			for (var i = 0; i < aggressors.Count; i++)
+			{
+				if (aggressors[i].Attacker == from)
+				{
+					return true;
+				}
+			}
+
+			return false;
 		}
 
 		public virtual void Deactivate()
