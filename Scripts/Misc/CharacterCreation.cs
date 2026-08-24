@@ -69,6 +69,10 @@ namespace Server.Misc
 				PackItem(new Dagger());
 			else
 				PackItem(new GargishDagger());
+
+			var gem = new StarterGem();
+			gem.Owner = m;
+			PackItem(gem);
 		}
 
 		private static void AddShirt(Mobile m, int shirtHue)
