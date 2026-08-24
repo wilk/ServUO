@@ -127,9 +127,13 @@ namespace Server.Mobiles
 	{
 		public static List<PlayerMobile> Instances { get; private set; }
 
+		private static readonly int _MaxWeight;
+
 		static PlayerMobile()
 		{
 			Instances = new List<PlayerMobile>(0x1000);
+
+			_MaxWeight = Config.Get("PlayerCaps.MaxWeight", 30000);
 		}
 
 		#region Mount Blocking
@@ -1098,7 +1102,7 @@ namespace Server.Mobiles
 			UpdateResistances();
 		}
 
-		public override int MaxWeight { get { return (((Core.ML && Race == Race.Human) ? 100 : 40) + (int)(3.5 * Str)); } }
+		public override int MaxWeight { get { return _MaxWeight; } }
 
 		public override int OverloadAllowance { get { return WeightOverloading.OverloadAllowance; } }
 

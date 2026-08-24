@@ -3612,11 +3612,11 @@ m_Stream.Write( (int) renderMode );
 
 			m_Stream.Write(m.TotalGold);
 			m_Stream.Write((short)(Core.AOS ? m.PhysicalResistance : (int)(m.ArmorRating + 0.5)));
-			m_Stream.Write((short)(Mobile.BodyWeight + m.TotalWeight));
+			m_Stream.Write((short)Math.Min(Mobile.BodyWeight + m.TotalWeight, short.MaxValue));
 
 			if (type >= 5)
 			{
-				m_Stream.Write((short)m.MaxWeight);
+				m_Stream.Write((short)Math.Min(m.MaxWeight, short.MaxValue));
 				m_Stream.Write((byte)(m.Race.RaceID + 1)); // Would be 0x00 if it's a non-ML enabled account but...
 			}
 
@@ -3729,11 +3729,11 @@ m_Stream.Write( (int) renderMode );
 
                 m_Stream.Write(beheld.TotalGold);
                 m_Stream.Write((short)(Core.AOS ? beheld.PhysicalResistance : (int)(beheld.ArmorRating + 0.5)));
-                m_Stream.Write((short)(Mobile.BodyWeight + beheld.TotalWeight));
+                m_Stream.Write((short)Math.Min(Mobile.BodyWeight + beheld.TotalWeight, short.MaxValue));
 
                 if (type >= 5)
                 {
-                    m_Stream.Write((short)beheld.MaxWeight);
+                    m_Stream.Write((short)Math.Min(beheld.MaxWeight, short.MaxValue));
                     m_Stream.Write((byte)(beheld.Race.RaceID + 1)); // Would be 0x00 if it's a non-ML enabled account but...
                 }
 
