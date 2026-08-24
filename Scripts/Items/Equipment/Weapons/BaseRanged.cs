@@ -71,6 +71,13 @@ namespace Server.Items
             if (nextShoot <= Core.TickCount ||
 				(Core.AOS && WeaponAbility.GetCurrentAbility(attacker) is MovingShot))
 			{
+				// Issue #13: read the flag once and clear it. Only the combat
+				// timer defers the hit. A special move keeps the immediate hit.
+				bool defer = m_DeferNextSwing;
+				m_DeferNextSwing = false;
+
+				TimeSpan swingDelay = GetDelay(attacker);
+
 				bool canSwing = true;
 
 				if (Core.AOS)
@@ -90,22 +97,36 @@ namespace Server.Items
 					attacker.DisruptiveAction();
 					attacker.Send(new Swing(0, attacker, damageable));
 
+					// Issue #13: OnFired consumes the ammo. Keep it on the swing
+					// tick, not the deferred hit, so the ammo count does not wait.
 					if (OnFired(attacker, damageable))
 					{
-                        if (CheckHit(attacker, damageable))
-						{
+                        if (defer)
+                        {
+                            PlaySwingAnimation(attacker);
+
+                            // Issue #13: the hit resolves HitDelay after the
+                            // swing animation starts. Clamp the delay below the
+                            // swing delay, because the pre-AOS swing delay has
+                            // no floor.
+                            TimeSpan hitDelay = HitDelay < swingDelay ? HitDelay : swingDelay;
+
+                            Timer.DelayCall(hitDelay, () => ResolveSwing(attacker, damageable, 1.0));
+                        }
+                        else if (CheckHit(attacker, damageable))
+                        {
                             OnHit(attacker, damageable);
-						}
-						else
-						{
+                        }
+                        else
+                        {
                             OnMiss(attacker, damageable);
-						}
+                        }
 					}
 				}
 
 				attacker.RevealingAction();
 
-				return GetDelay(attacker);
+				return swingDelay;
 			}
 			
 			attacker.RevealingAction();

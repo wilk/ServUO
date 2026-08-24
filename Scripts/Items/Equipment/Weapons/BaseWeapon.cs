@@ -1659,6 +1659,47 @@ namespace Server.Items
             }
 		}
 
+        // Issue #13: the swing animation plays first. The hit sound, the hurt
+        // animation and the damage follow HitDelay later. Both values are
+        // provisional. The shard owner tunes them in game.
+        public static TimeSpan HitDelay = TimeSpan.FromMilliseconds(1000);
+        public static int SwingAnimationDelay = 5;
+
+        // Issue #13, open point 1: id 26 moves the wrong arm for a mounted
+        // one-handed swing. The value is provisional until a shard owner test
+        // with [Animate settles the correct id.
+        public static int MountedOneHandedAction = 26;
+
+        // The attacker whose swing animation OnSwing already played. OnHit
+        // and OnMiss read this field once and clear it. One field is enough,
+        // because only the combat timer defers a swing and the server runs
+        // one timer at a time. The weapon cannot hold this state, because
+        // Fists is one static instance shared by every bare-handed mobile.
+        private static Mobile m_AnimatedAttacker;
+
+        // True while the combat timer runs a swing. OnSwing defers the hit
+        // only for that path. A special move that calls OnSwing keeps the
+        // immediate hit, because it reads its own state on the next line.
+        // Protected, so BaseRanged.OnSwing can read the same flag.
+        protected static bool m_DeferNextSwing;
+
+        // Issue #13: the combat timer calls this method. It marks the swing
+        // so that OnSwing delays the hit. Every other caller of OnSwing keeps
+        // the immediate hit that pub57 had.
+        public TimeSpan OnSwingTimer(Mobile attacker, IDamageable damageable)
+        {
+            m_DeferNextSwing = true;
+
+            try
+            {
+                return OnSwing(attacker, damageable);
+            }
+            finally
+            {
+                m_DeferNextSwing = false;
+            }
+        }
+
         public virtual TimeSpan OnSwing(Mobile attacker, IDamageable damageable)
 		{
             return OnSwing(attacker, damageable, 1.0);
@@ -1666,6 +1707,13 @@ namespace Server.Items
 
         public virtual TimeSpan OnSwing(Mobile attacker, IDamageable damageable, double damageBonus)
 		{
+            // Issue #13: read the flag once and clear it. A nested swing
+            // inside this call must not inherit the deferred path.
+            bool defer = m_DeferNextSwing;
+            m_DeferNextSwing = false;
+
+            TimeSpan swingDelay = GetDelay(attacker);
+
 			bool canSwing = true;
 
 			if (Core.AOS)
@@ -1714,18 +1762,108 @@ namespace Server.Items
 					}
 				}
 
-                if (CheckHit(attacker, damageable))
-				{
+                if (defer)
+                {
+                    PlaySwingAnimation(attacker);
+
+                    // Issue #13: the hit resolves HitDelay after the swing
+                    // animation starts. Clamp the delay below the swing delay,
+                    // because the pre-AOS swing delay has no floor.
+                    TimeSpan hitDelay = HitDelay < swingDelay ? HitDelay : swingDelay;
+
+                    Timer.DelayCall(hitDelay, () => ResolveSwing(attacker, damageable, damageBonus));
+                }
+                else if (CheckHit(attacker, damageable))
+                {
                     OnHit(attacker, damageable, damageBonus);
-				}
-				else
-				{
+                }
+                else
+                {
                     OnMiss(attacker, damageable);
-				}
+                }
 			}
 
-			return GetDelay(attacker);
+			return swingDelay;
 		}
+
+        // Issue #13: the gates that stop a deferred swing. OnSwing tests these
+        // at the swing. ResolveSwing tests them again, because the hit lands
+        // later. The test covers the gates that BaseWeapon and BaseRanged
+        // share. It leaves the peace gate out, because BaseRanged never had it.
+        protected virtual bool CanStillSwing(Mobile attacker)
+        {
+            if (!Core.AOS)
+            {
+                return true;
+            }
+
+            if (attacker.Paralyzed || attacker.Frozen)
+            {
+                return false;
+            }
+
+            Spell sp = attacker.Spell as Spell;
+
+            return sp == null || !sp.IsCasting || !sp.BlocksMovement;
+        }
+
+        // Issue #13: resolves the swing that OnSwing deferred. Re-checks the
+        // fight the same way CombatTimer.OnTick does, then runs the hit or
+        // the miss. Drops the hit and plays nothing if the fight is no
+        // longer valid.
+        // Protected, not private, so BaseRanged.OnSwing can reuse it instead
+        // of duplicating the fight re-check.
+        protected void ResolveSwing(Mobile attacker, IDamageable damageable, double damageBonus)
+        {
+            Mobile defender = damageable as Mobile;
+
+            if (damageable == null || damageable.Deleted || attacker.Deleted || damageable.Map != attacker.Map ||
+                !damageable.Alive || !attacker.Alive || !attacker.CanSee(damageable) ||
+                (defender != null && defender.IsDeadBondedPet) || attacker.IsDeadBondedPet)
+            {
+                return;
+            }
+
+            // Issue #13: the attacker can change the weapon during the delay.
+            // Drop the hit if this weapon left the hand, or if it is gone.
+            if (Deleted || attacker.Weapon != this)
+            {
+                return;
+            }
+
+            if (!attacker.InRange(damageable, MaxRange) || !attacker.InLOS(damageable))
+            {
+                return;
+            }
+
+            // Issue #13: re-check the gates that OnSwing tested. The attacker
+            // can become paralyzed or frozen, or can start a spell, during the
+            // delay.
+            if (!CanStillSwing(attacker))
+            {
+                return;
+            }
+
+            m_AnimatedAttacker = attacker;
+
+            try
+            {
+                if (CheckHit(attacker, damageable))
+                {
+                    OnHit(attacker, damageable, damageBonus);
+                }
+                else
+                {
+                    OnMiss(attacker, damageable);
+                }
+            }
+            finally
+            {
+                // Issue #13: clear the flag even when the hit throws. A stale
+                // flag would eat the next swing animation of this attacker.
+                m_AnimatedAttacker = null;
+            }
+        }
 
 		#region Sounds
 		public virtual int GetHitAttackSound(Mobile attacker, Mobile defender)
@@ -2245,7 +2383,16 @@ namespace Server.Items
                 defender = clone;
             }
 
-			PlaySwingAnimation(attacker);
+			// Issue #13: OnSwing already played the animation for a deferred
+            // hit. Play it here only for a caller that skips OnSwing.
+            if (m_AnimatedAttacker == attacker)
+            {
+                m_AnimatedAttacker = null;
+            }
+            else
+            {
+                PlaySwingAnimation(attacker);
+            }
 
             if(defender != null)
 			    PlayHurtAnimation(defender);
@@ -3580,7 +3727,17 @@ namespace Server.Items
 		{
             Mobile defender = damageable as Mobile;
 
-			PlaySwingAnimation(attacker);
+			// Issue #13: OnSwing already played the animation for a deferred
+			// miss. Play it here only for a caller that skips OnSwing.
+			if (m_AnimatedAttacker == attacker)
+			{
+				m_AnimatedAttacker = null;
+			}
+			else
+			{
+				PlaySwingAnimation(attacker);
+			}
+
 			attacker.PlaySound(GetMissAttackSound(attacker, defender));
 
             if(defender != null)
@@ -4003,7 +4160,8 @@ namespace Server.Items
 					case WeaponAnimation.Pierce1H:
 					case WeaponAnimation.Slash1H:
 					case WeaponAnimation.Throwing:
-						action = 26;
+						// Issue #13, open point 1: provisional id. See MountedOneHandedAction.
+						action = MountedOneHandedAction;
 						break;
 					case WeaponAnimation.Bash2H:
 					case WeaponAnimation.Pierce2H:
@@ -4018,7 +4176,7 @@ namespace Server.Items
 						break;
 				}
 
-				from.Animate(action, 7, 1, true, false, 0);
+				from.Animate(action, 7, 1, true, false, SwingAnimationDelay);
 				return;
 			}
 
@@ -4026,7 +4184,7 @@ namespace Server.Items
             {
                 action = GetNewAnimationAction(from);
 
-                from.Animate(AnimationType.Attack, action); 
+                from.Animate(AnimationType.Attack, action, SwingAnimationDelay);
             }
             else
             {
@@ -4097,7 +4255,7 @@ namespace Server.Items
                         return;
                 }
 
-                from.Animate(action, 7, 1, true, false, 0);
+                from.Animate(action, 7, 1, true, false, SwingAnimationDelay);
             }
 		}
 
