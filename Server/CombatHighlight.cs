@@ -19,7 +19,7 @@ namespace Server
 			{
 				AggressorInfo info = list[i];
 
-				if (info.Defender == beheld && !info.Expired)
+				if (info.Defender == beheld && !info.Expired && info.LastCombatTime >= beholder.LastPeaceTime)
 				{
 					return true;
 				}

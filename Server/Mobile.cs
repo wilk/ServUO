@@ -825,6 +825,7 @@ namespace Server
 		private DateTime m_LastIntGain;
 		private DateTime m_LastDexGain;
 		private Race m_Race;
+		private DateTime m_LastPeaceTime;
         #endregion
 
         private static readonly TimeSpan WarmodeSpamCatch = TimeSpan.FromSeconds((Core.SE ? 1.0 : 0.5));
@@ -8945,6 +8946,22 @@ namespace Server
 					if (!m_Warmode)
 					{
 						Combatant = null;
+
+						m_LastPeaceTime = DateTime.UtcNow;
+
+						if (m_NetState != null)
+						{
+							for (int i = 0; i < m_Aggressed.Count; ++i)
+							{
+								AggressorInfo info = m_Aggressed[i];
+								Mobile defender = info.Defender;
+
+								if (!info.Expired && Utility.InUpdateRange(this, defender) && CanSee(defender))
+								{
+									m_NetState.Send(MobileIncoming.Create(m_NetState, this, defender));
+								}
+							}
+						}
 					}
 
 					if (!Alive)
@@ -9417,6 +9434,8 @@ namespace Server
 
 		[CommandProperty(AccessLevel.GameMaster)]
 		public DateTime LastDexGain { get { return m_LastDexGain; } set { m_LastDexGain = value; } }
+
+		public DateTime LastPeaceTime { get { return m_LastPeaceTime; } }
 
 		public DateTime LastStatGain
 		{
