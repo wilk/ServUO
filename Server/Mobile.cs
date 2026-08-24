@@ -3060,7 +3060,8 @@ namespace Server
 			return true;
 		}
 
-		private static readonly Packet[][] m_MovingPacketCache = new Packet[2][] {new Packet[8], new Packet[8]};
+		private static readonly Packet[][] m_MovingPacketCache =
+			new Packet[4][] {new Packet[8], new Packet[8], new Packet[8], new Packet[8]};
 
 		private bool m_Pushing;
         private bool m_IgnoreMobiles;
@@ -3406,46 +3407,30 @@ namespace Server
 						if (ns.StygianAbyss)
 						{
 							int noto = Notoriety.Compute(m, this);
+							int idx = highlight ? 2 : 0;
 
-							if (highlight)
+							Packet p = cache[idx][noto];
+
+							if (p == null)
 							{
-								Packet hp = Packet.Acquire(new MobileMoving(this, noto, true));
-								ns.Send(hp);
-								Packet.Release(hp);
+								cache[idx][noto] = p = Packet.Acquire(new MobileMoving(this, noto, highlight));
 							}
-							else
-							{
-								Packet p = cache[0][noto];
 
-								if (p == null)
-								{
-									cache[0][noto] = p = Packet.Acquire(new MobileMoving(this, noto, false));
-								}
-
-								ns.Send(p);
-							}
+							ns.Send(p);
 						}
 						else
 						{
 							int noto = Notoriety.Compute(m, this);
+							int idx = highlight ? 3 : 1;
 
-							if (highlight)
+							Packet p = cache[idx][noto];
+
+							if (p == null)
 							{
-								Packet hp = Packet.Acquire(new MobileMovingOld(this, noto, true));
-								ns.Send(hp);
-								Packet.Release(hp);
+								cache[idx][noto] = p = Packet.Acquire(new MobileMovingOld(this, noto, highlight));
 							}
-							else
-							{
-								Packet p = cache[1][noto];
 
-								if (p == null)
-								{
-									cache[1][noto] = p = Packet.Acquire(new MobileMovingOld(this, noto, false));
-								}
-
-								ns.Send(p);
-							}
+							ns.Send(p);
 						}
 					}
 				}
@@ -11537,7 +11522,7 @@ namespace Server
                 sendFace = true;
             }
 
-            var cache = new Packet[2][] {new Packet[8], new Packet[8]};
+            var cache = new Packet[4][] {new Packet[8], new Packet[8], new Packet[8], new Packet[8]};
 
 			NetState ourState = m.m_NetState;
 
@@ -11736,9 +11721,14 @@ namespace Server
 
 								if (CombatHighlight.Applies(beholder, m))
 								{
-									Packet hp = Packet.Acquire(new MobileMoving(m, noto, true));
+									Packet hp = cache[2][noto];
+
+									if (hp == null)
+									{
+										cache[2][noto] = hp = Packet.Acquire(new MobileMoving(m, noto, true));
+									}
+
 									state.Send(hp);
-									Packet.Release(hp);
 								}
 								else
 								{
@@ -11785,9 +11775,14 @@ namespace Server
 
 								if (CombatHighlight.Applies(beholder, m))
 								{
-									Packet hp = Packet.Acquire(new MobileMovingOld(m, noto, true));
+									Packet hp = cache[3][noto];
+
+									if (hp == null)
+									{
+										cache[3][noto] = hp = Packet.Acquire(new MobileMovingOld(m, noto, true));
+									}
+
 									state.Send(hp);
-									Packet.Release(hp);
 								}
 								else
 								{
