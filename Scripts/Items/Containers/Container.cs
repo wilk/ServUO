@@ -455,7 +455,7 @@ namespace Server.Items
                 Mobile m = ParentEntity as Mobile;
                 if (m != null && m.Player && m.Backpack == this)
                 {
-                    return Config.Get("PlayerCaps.MaxWeight", 30000);
+                    return m.MaxWeight;
                 }
                 else
                 {
