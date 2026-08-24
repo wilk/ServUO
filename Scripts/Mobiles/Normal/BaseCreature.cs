@@ -1826,7 +1826,7 @@ namespace Server.Mobiles
                     return x.Data == "red";
                 }
 
-                return !Controlled && !Summoned && Karma < 0 && AttacksOnSight;
+                return !Controlled && !Summoned && !InitialInnocent && Karma < 0 && AttacksOnSight;
             }
         }
 
