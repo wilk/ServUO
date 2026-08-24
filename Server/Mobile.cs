@@ -825,6 +825,7 @@ namespace Server
 		private DateTime m_LastIntGain;
 		private DateTime m_LastDexGain;
 		private Race m_Race;
+		private DateTime m_LastPeaceTime;
         #endregion
 
         private static readonly TimeSpan WarmodeSpamCatch = TimeSpan.FromSeconds((Core.SE ? 1.0 : 0.5));
@@ -2411,6 +2412,11 @@ namespace Server
                     m_NetState.Send(MobileIncoming.Create(m_NetState, this, aggressor));
                 }
 
+                if (aggressor.NetState != null && aggressor.CanSee(this))
+                {
+                    aggressor.NetState.Send(MobileIncoming.Create(aggressor.NetState, aggressor, this));
+                }
+
                 if (Combatant == null)
                     setCombatant = true;
 
@@ -3055,7 +3061,8 @@ namespace Server
 			return true;
 		}
 
-		private static readonly Packet[][] m_MovingPacketCache = new Packet[2][] {new Packet[8], new Packet[8]};
+		private static readonly Packet[][] m_MovingPacketCache =
+			new Packet[4][] {new Packet[8], new Packet[8], new Packet[8], new Packet[8]};
 
 		private bool m_Pushing;
         private bool m_IgnoreMobiles;
@@ -3396,28 +3403,32 @@ namespace Server
 
 					if (ns != null && m.InUpdateRange(m_Location) && m.CanSee(this))
 					{
+						bool highlight = CombatHighlight.Applies(m, this);
+
 						if (ns.StygianAbyss)
 						{
-							Packet p;
 							int noto = Notoriety.Compute(m, this);
-							p = cache[0][noto];
+							int idx = highlight ? 2 : 0;
+
+							Packet p = cache[idx][noto];
 
 							if (p == null)
 							{
-								cache[0][noto] = p = Packet.Acquire(new MobileMoving(this, noto));
+								cache[idx][noto] = p = Packet.Acquire(new MobileMoving(this, noto, highlight));
 							}
 
 							ns.Send(p);
 						}
 						else
 						{
-							Packet p;
 							int noto = Notoriety.Compute(m, this);
-							p = cache[1][noto];
+							int idx = highlight ? 3 : 1;
+
+							Packet p = cache[idx][noto];
 
 							if (p == null)
 							{
-								cache[1][noto] = p = Packet.Acquire(new MobileMovingOld(this, noto));
+								cache[idx][noto] = p = Packet.Acquire(new MobileMovingOld(this, noto, highlight));
 							}
 
 							ns.Send(p);
@@ -8935,6 +8946,22 @@ namespace Server
 					if (!m_Warmode)
 					{
 						Combatant = null;
+
+						m_LastPeaceTime = DateTime.UtcNow;
+
+						if (m_NetState != null)
+						{
+							for (int i = 0; i < m_Aggressed.Count; ++i)
+							{
+								AggressorInfo info = m_Aggressed[i];
+								Mobile defender = info.Defender;
+
+								if (!info.Expired && Utility.InUpdateRange(this, defender) && CanSee(defender))
+								{
+									m_NetState.Send(MobileIncoming.Create(m_NetState, this, defender));
+								}
+							}
+						}
 					}
 
 					if (!Alive)
@@ -9407,6 +9434,8 @@ namespace Server
 
 		[CommandProperty(AccessLevel.GameMaster)]
 		public DateTime LastDexGain { get { return m_LastDexGain; } set { m_LastDexGain = value; } }
+
+		public DateTime LastPeaceTime { get { return m_LastPeaceTime; } }
 
 		public DateTime LastStatGain
 		{
@@ -11512,7 +11541,7 @@ namespace Server
                 sendFace = true;
             }
 
-            var cache = new Packet[2][] {new Packet[8], new Packet[8]};
+            var cache = new Packet[4][] {new Packet[8], new Packet[8], new Packet[8], new Packet[8]};
 
 			NetState ourState = m.m_NetState;
 
@@ -11544,7 +11573,7 @@ namespace Server
 					if (sendMoving)
 					{
 						int noto = Notoriety.Compute(m, m);
-						ourState.Send(cache[0][noto] = Packet.Acquire(new MobileMoving(m, noto)));
+						ourState.Send(cache[0][noto] = Packet.Acquire(new MobileMoving(m, noto, false)));
 					}
 
 					if (sendHealthbarPoison)
@@ -11564,7 +11593,7 @@ namespace Server
 					if (sendMoving || sendHealthbarPoison || sendHealthbarYellow)
 					{
 						int noto = Notoriety.Compute(m, m);
-						ourState.Send(cache[1][noto] = Packet.Acquire(new MobileMovingOld(m, noto)));
+						ourState.Send(cache[1][noto] = Packet.Acquire(new MobileMovingOld(m, noto, false)));
 					}
 				}
 
@@ -11709,14 +11738,28 @@ namespace Server
 							{
 								int noto = Notoriety.Compute(beholder, m);
 
-								Packet p = cache[0][noto];
-
-								if (p == null)
+								if (CombatHighlight.Applies(beholder, m))
 								{
-									cache[0][noto] = p = Packet.Acquire(new MobileMoving(m, noto));
-								}
+									Packet hp = cache[2][noto];
 
-								state.Send(p);
+									if (hp == null)
+									{
+										cache[2][noto] = hp = Packet.Acquire(new MobileMoving(m, noto, true));
+									}
+
+									state.Send(hp);
+								}
+								else
+								{
+									Packet p = cache[0][noto];
+
+									if (p == null)
+									{
+										cache[0][noto] = p = Packet.Acquire(new MobileMoving(m, noto, false));
+									}
+
+									state.Send(p);
+								}
 							}
 
 							if (sendHealthbarPoison)
@@ -11749,14 +11792,28 @@ namespace Server
 							{
 								int noto = Notoriety.Compute(beholder, m);
 
-								Packet p = cache[1][noto];
-
-								if (p == null)
+								if (CombatHighlight.Applies(beholder, m))
 								{
-									cache[1][noto] = p = Packet.Acquire(new MobileMovingOld(m, noto));
-								}
+									Packet hp = cache[3][noto];
 
-								state.Send(p);
+									if (hp == null)
+									{
+										cache[3][noto] = hp = Packet.Acquire(new MobileMovingOld(m, noto, true));
+									}
+
+									state.Send(hp);
+								}
+								else
+								{
+									Packet p = cache[1][noto];
+
+									if (p == null)
+									{
+										cache[1][noto] = p = Packet.Acquire(new MobileMovingOld(m, noto, false));
+									}
+
+									state.Send(p);
+								}
 							}
 						}
 
