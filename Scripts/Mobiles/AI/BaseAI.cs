@@ -2967,12 +2967,7 @@ namespace Server.Mobiles
 
 		public virtual bool IsHostile(Mobile from, FightMode mode)
 		{
-			if (m_Mobile.Combatant == from || from.Combatant == m_Mobile)
-			{
-				return true;
-			}
-
-			return false;
+			return m_Mobile.Combatant == from;
 		}
 
 		public virtual void Deactivate()
