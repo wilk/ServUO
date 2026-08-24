@@ -2692,7 +2692,7 @@ m_Stream.Write( (int) renderMode );
 
 	public sealed class MobileMoving : Packet
 	{
-		public MobileMoving(Mobile m, int noto)
+		public MobileMoving(Mobile m, int noto, bool highlight)
 			: base(0x77, 17)
 		{
 			Point3D loc = m.Location;
@@ -2702,6 +2702,10 @@ m_Stream.Write( (int) renderMode );
 			if (m.SolidHueOverride >= 0)
 			{
 				hue = m.SolidHueOverride;
+			}
+			else if (highlight)
+			{
+				hue = CombatHighlight.Hue;
 			}
 
 			m_Stream.Write(m.Serial);
@@ -2719,7 +2723,7 @@ m_Stream.Write( (int) renderMode );
 	// Pre-7.0.0.0 Mobile Moving
 	public sealed class MobileMovingOld : Packet
 	{
-		public MobileMovingOld(Mobile m, int noto)
+		public MobileMovingOld(Mobile m, int noto, bool highlight)
 			: base(0x77, 17)
 		{
 			Point3D loc = m.Location;
@@ -2729,6 +2733,10 @@ m_Stream.Write( (int) renderMode );
 			if (m.SolidHueOverride >= 0)
 			{
 				hue = m.SolidHueOverride;
+			}
+			else if (highlight)
+			{
+				hue = CombatHighlight.Hue;
 			}
 
 			m_Stream.Write(m.Serial);
@@ -3993,6 +4001,10 @@ m_Stream.Write( (int) renderMode );
 			{
 				hue = beheld.SolidHueOverride;
 			}
+			else
+			{
+				hue = CombatHighlight.Apply(beholder, beheld, hue);
+			}
 
 			m_Stream.Write(beheld.Serial);
 			m_Stream.Write((short)beheld.Body);
@@ -4135,6 +4147,10 @@ m_Stream.Write( (int) renderMode );
 			if (beheld.SolidHueOverride >= 0)
 			{
 				hue = beheld.SolidHueOverride;
+			}
+			else
+			{
+				hue = CombatHighlight.Apply(beholder, beheld, hue);
 			}
 
 			m_Stream.Write(beheld.Serial);
@@ -4286,6 +4302,10 @@ m_Stream.Write( (int) renderMode );
 			if (beheld.SolidHueOverride >= 0)
 			{
 				hue = beheld.SolidHueOverride;
+			}
+			else
+			{
+				hue = CombatHighlight.Apply(beholder, beheld, hue);
 			}
 
 			m_Stream.Write(beheld.Serial);

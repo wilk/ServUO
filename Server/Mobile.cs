@@ -2411,6 +2411,11 @@ namespace Server
                     m_NetState.Send(MobileIncoming.Create(m_NetState, this, aggressor));
                 }
 
+                if (aggressor.NetState != null && aggressor.CanSee(this))
+                {
+                    aggressor.NetState.Send(MobileIncoming.Create(aggressor.NetState, aggressor, this));
+                }
+
                 if (Combatant == null)
                     setCombatant = true;
 
@@ -3396,31 +3401,51 @@ namespace Server
 
 					if (ns != null && m.InUpdateRange(m_Location) && m.CanSee(this))
 					{
+						bool highlight = CombatHighlight.Applies(m, this);
+
 						if (ns.StygianAbyss)
 						{
-							Packet p;
 							int noto = Notoriety.Compute(m, this);
-							p = cache[0][noto];
 
-							if (p == null)
+							if (highlight)
 							{
-								cache[0][noto] = p = Packet.Acquire(new MobileMoving(this, noto));
+								Packet hp = Packet.Acquire(new MobileMoving(this, noto, true));
+								ns.Send(hp);
+								Packet.Release(hp);
 							}
+							else
+							{
+								Packet p = cache[0][noto];
 
-							ns.Send(p);
+								if (p == null)
+								{
+									cache[0][noto] = p = Packet.Acquire(new MobileMoving(this, noto, false));
+								}
+
+								ns.Send(p);
+							}
 						}
 						else
 						{
-							Packet p;
 							int noto = Notoriety.Compute(m, this);
-							p = cache[1][noto];
 
-							if (p == null)
+							if (highlight)
 							{
-								cache[1][noto] = p = Packet.Acquire(new MobileMovingOld(this, noto));
+								Packet hp = Packet.Acquire(new MobileMovingOld(this, noto, true));
+								ns.Send(hp);
+								Packet.Release(hp);
 							}
+							else
+							{
+								Packet p = cache[1][noto];
 
-							ns.Send(p);
+								if (p == null)
+								{
+									cache[1][noto] = p = Packet.Acquire(new MobileMovingOld(this, noto, false));
+								}
+
+								ns.Send(p);
+							}
 						}
 					}
 				}
@@ -11544,7 +11569,7 @@ namespace Server
 					if (sendMoving)
 					{
 						int noto = Notoriety.Compute(m, m);
-						ourState.Send(cache[0][noto] = Packet.Acquire(new MobileMoving(m, noto)));
+						ourState.Send(cache[0][noto] = Packet.Acquire(new MobileMoving(m, noto, false)));
 					}
 
 					if (sendHealthbarPoison)
@@ -11564,7 +11589,7 @@ namespace Server
 					if (sendMoving || sendHealthbarPoison || sendHealthbarYellow)
 					{
 						int noto = Notoriety.Compute(m, m);
-						ourState.Send(cache[1][noto] = Packet.Acquire(new MobileMovingOld(m, noto)));
+						ourState.Send(cache[1][noto] = Packet.Acquire(new MobileMovingOld(m, noto, false)));
 					}
 				}
 
@@ -11709,14 +11734,23 @@ namespace Server
 							{
 								int noto = Notoriety.Compute(beholder, m);
 
-								Packet p = cache[0][noto];
-
-								if (p == null)
+								if (CombatHighlight.Applies(beholder, m))
 								{
-									cache[0][noto] = p = Packet.Acquire(new MobileMoving(m, noto));
+									Packet hp = Packet.Acquire(new MobileMoving(m, noto, true));
+									state.Send(hp);
+									Packet.Release(hp);
 								}
+								else
+								{
+									Packet p = cache[0][noto];
 
-								state.Send(p);
+									if (p == null)
+									{
+										cache[0][noto] = p = Packet.Acquire(new MobileMoving(m, noto, false));
+									}
+
+									state.Send(p);
+								}
 							}
 
 							if (sendHealthbarPoison)
@@ -11749,14 +11783,23 @@ namespace Server
 							{
 								int noto = Notoriety.Compute(beholder, m);
 
-								Packet p = cache[1][noto];
-
-								if (p == null)
+								if (CombatHighlight.Applies(beholder, m))
 								{
-									cache[1][noto] = p = Packet.Acquire(new MobileMovingOld(m, noto));
+									Packet hp = Packet.Acquire(new MobileMovingOld(m, noto, true));
+									state.Send(hp);
+									Packet.Release(hp);
 								}
+								else
+								{
+									Packet p = cache[1][noto];
 
-								state.Send(p);
+									if (p == null)
+									{
+										cache[1][noto] = p = Packet.Acquire(new MobileMovingOld(m, noto, false));
+									}
+
+									state.Send(p);
+								}
 							}
 						}
 
