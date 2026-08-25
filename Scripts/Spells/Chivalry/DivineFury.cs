@@ -59,6 +59,13 @@ namespace Server.Spells.Chivalry
                 return false;
             }
         }
+        public override bool BlocksWeaponSwing
+        {
+            get
+            {
+                return false;
+            }
+        }
         public static bool UnderEffect(Mobile m)
         {
             return m_Table.ContainsKey(m);

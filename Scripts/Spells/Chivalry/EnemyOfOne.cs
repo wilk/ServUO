@@ -23,6 +23,7 @@ namespace Server.Spells.Chivalry
         public override int RequiredTithing { get { return 10; } }
         public override int MantraNumber { get { return 1060723; } } // Forul Solum
         public override bool BlocksMovement { get { return false; } }
+        public override bool BlocksWeaponSwing { get { return false; } }
 
         public override TimeSpan GetCastDelay()
         {

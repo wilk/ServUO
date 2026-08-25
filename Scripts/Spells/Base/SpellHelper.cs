@@ -64,6 +64,8 @@ namespace Server.Spells
 
     public class SpellHelper
     {
+        private static readonly double m_DamageScalar = Config.Get("Spells.DamageScalar", 1.5);
+
         #region Spell Focus and SDI Calculations
         private static SkillName[] _Schools =
         {
@@ -1457,6 +1459,8 @@ namespace Server.Spells
         {
             Mobile target = damageable as Mobile;
             int iDamage = (int)damage;
+
+            iDamage = (int)Math.Round(iDamage * m_DamageScalar);
 
             if (delay == TimeSpan.Zero)
             {

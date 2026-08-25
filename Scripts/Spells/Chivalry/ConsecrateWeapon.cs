@@ -60,6 +60,13 @@ namespace Server.Spells.Chivalry
                 return false;
             }
         }
+        public override bool BlocksWeaponSwing
+        {
+            get
+            {
+                return false;
+            }
+        }
         public override void OnCast()
         {
             BaseWeapon weapon = this.Caster.Weapon as BaseWeapon;

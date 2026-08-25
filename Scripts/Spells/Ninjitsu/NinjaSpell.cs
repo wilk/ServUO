@@ -54,6 +54,13 @@ namespace Server.Spells.Ninjitsu
                 return false;
             }
         }
+        public override bool BlocksWeaponSwing
+        {
+            get
+            {
+                return false;
+            }
+        }
         //public override int CastDelayBase{ get{ return 1; } }
         public override int CastRecoveryBase
         {

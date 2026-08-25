@@ -203,6 +203,8 @@ namespace Server.Mobiles
     {
         public const int MaxLoyalty = 100;
 
+        private static readonly bool m_MoveWhileCasting = Config.Get("Spells.MoveWhileCasting", true);
+
         private bool _LockDirection;
 
         [CommandProperty(AccessLevel.GameMaster)]
@@ -1059,7 +1061,7 @@ namespace Server.Mobiles
         public virtual double TeleportChance { get { return 0.05; } }
         public virtual bool AttacksFocus { get { return false; } }
         public virtual bool ShowSpellMantra { get { return false; } }
-        public virtual bool FreezeOnCast { get { return ShowSpellMantra; } }
+        public virtual bool FreezeOnCast { get { return !m_MoveWhileCasting && ShowSpellMantra; } }
         public virtual bool CanFly { get { return false; } }
 
         public virtual bool CanAutoStable

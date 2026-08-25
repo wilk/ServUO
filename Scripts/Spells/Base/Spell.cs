@@ -30,7 +30,12 @@ namespace Server.Spells
 		private readonly SpellInfo m_Info;
 		private SpellState m_State;
 		private long m_StartCastTime;
-        private IDamageable m_InstantTarget;
+        private object m_InstantTarget;
+        private bool m_AskedForTarget;
+
+        private static readonly bool m_MoveWhileCasting = Config.Get("Spells.MoveWhileCasting", true);
+        private static readonly bool m_TargetBeforeCast = Config.Get("Spells.TargetBeforeCast", true);
+        private static readonly bool m_RequireEquippedSpellbook = Config.Get("Spells.RequireEquippedSpellbook", true);
 
 		public int ID { get { return SpellRegistry.GetRegistryNumber(this); } }
 
@@ -44,7 +49,7 @@ namespace Server.Spells
 		public Item Scroll { get { return m_Scroll; } }
 		public long StartCastTime { get { return m_StartCastTime; } }
 
-        public IDamageable InstantTarget { get { return m_InstantTarget; } set { m_InstantTarget = value; } }
+        public object InstantTarget { get { return m_InstantTarget; } set { m_InstantTarget = value; } }
 
         private static readonly TimeSpan NextSpellDelay = TimeSpan.FromSeconds(0.75);
 		private static TimeSpan AnimateDelay = TimeSpan.FromSeconds(1.5);
@@ -705,6 +710,32 @@ namespace Server.Spells
 			}
 		}
 
+        public virtual bool CheckSpellbookInHand()
+        {
+            if (!m_RequireEquippedSpellbook || !m_Caster.Player || m_Caster.AccessLevel != AccessLevel.Player || m_Scroll != null)
+            {
+                return true;
+            }
+
+            SpellbookType type = Spellbook.GetTypeForSpell(ID);
+
+            if (type != SpellbookType.Regular && type != SpellbookType.Necromancer &&
+                type != SpellbookType.Arcanist && type != SpellbookType.Mystic)
+            {
+                return true;
+            }
+
+            Spellbook book = Spellbook.FindEquippedSpellbook(m_Caster);
+
+            if (book != null && Spellbook.ValidateSpellbook(book, ID, type))
+            {
+                return true;
+            }
+
+            m_Caster.SendMessage("You must hold the spellbook in your hand to cast this spell.");
+            return false;
+        }
+
 		public virtual bool BlockedByHorrificBeast 
         { 
             get 
@@ -718,7 +749,8 @@ namespace Server.Spells
         }
 
 		public virtual bool BlockedByAnimalForm { get { return true; } }
-		public virtual bool BlocksMovement { get { return true; } }
+		public virtual bool BlocksMovement { get { return !m_MoveWhileCasting; } }
+		public virtual bool BlocksWeaponSwing { get { return true; } }
 
 		public virtual bool CheckNextSpellTime { get { return !(m_Scroll is BaseWand); } }
 
@@ -764,6 +796,10 @@ namespace Server.Spells
 			{
 				m_Caster.SendLocalizedMessage(1072060); // You cannot cast a spell while calmed.
 			}
+            else if (!CheckSpellbookInHand())
+            {
+                // CheckSpellbookInHand already sent the refusal message.
+            }
             else if (m_Caster.Mana >= ScaleMana(GetMana()))
             {
                 #region Stygian Abyss
@@ -787,6 +823,19 @@ namespace Server.Spells
                 if (m_Caster.Spell == null && m_Caster.CheckSpellCast(this) && CheckCast() &&
                     m_Caster.Region.OnBeginSpellCast(m_Caster, this))
                 {
+                    if (!m_AskedForTarget && m_TargetBeforeCast && InstantTarget == null &&
+                        m_Caster.Player && m_Caster.NetState != null)
+                    {
+                        Target preTarget = CreateInstantTarget();
+
+                        if (preTarget != null)
+                        {
+                            m_AskedForTarget = true;
+                            m_Caster.Target = new PreCastTarget(this, preTarget);
+                            return true;
+                        }
+                    }
+
                     m_State = SpellState.Casting;
                     m_Caster.Spell = this;
 
@@ -870,38 +919,52 @@ namespace Server.Spells
 		public abstract void OnCast();
 
         #region Enhanced Client
-        public bool OnCastInstantTarget()
+        public Type GetInstantTargetType()
         {
-            if (InstantTarget == null)
-                return false;
-
             Type spellType = GetType();
 
             var types = spellType.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
 
             if (types != null)
             {
-                Type targetType = types.FirstOrDefault(t => t.IsSubclassOf(typeof(Server.Targeting.Target)));
+                return types.FirstOrDefault(t => t.IsSubclassOf(typeof(Server.Targeting.Target)));
+            }
 
-                if (targetType != null)
-                {
-                    Target t = null;
+            return null;
+        }
 
-                    try
-                    {
-                        t = Activator.CreateInstance(targetType, this) as Target;
-                    }
-                    catch
-                    {
-                        LogBadConstructorForInstantTarget();
-                    }
+        public Target CreateInstantTarget()
+        {
+            Type targetType = GetInstantTargetType();
 
-                    if (t != null)
-                    {
-                        t.Invoke(Caster, InstantTarget);
-                        return true;
-                    }
-                }
+            if (targetType == null)
+                return null;
+
+            Target t = null;
+
+            try
+            {
+                t = Activator.CreateInstance(targetType, this) as Target;
+            }
+            catch
+            {
+                LogBadConstructorForInstantTarget();
+            }
+
+            return t;
+        }
+
+        public bool OnCastInstantTarget()
+        {
+            if (InstantTarget == null)
+                return false;
+
+            Target t = CreateInstantTarget();
+
+            if (t != null)
+            {
+                t.Invoke(Caster, InstantTarget);
+                return true;
             }
 
             return false;
@@ -1279,6 +1342,110 @@ namespace Server.Spells
         public virtual IEnumerable<IDamageable> AcquireIndirectTargets(IPoint3D pnt, int range)
         {
             return SpellHelper.AcquireIndirectTargets(Caster, pnt, Caster.Map, range);
+        }
+
+        private class PreCastTarget : Target
+        {
+            private readonly Spell m_Spell;
+
+            public PreCastTarget(Spell spell, Target inner)
+                : base(inner.Range, inner.AllowGround, inner.Flags)
+            {
+                m_Spell = spell;
+
+                CheckLOS = inner.CheckLOS;
+                AllowNonlocal = inner.AllowNonlocal;
+                DisallowMultis = inner.DisallowMultis;
+            }
+
+            protected override void OnTarget(Mobile from, object o)
+            {
+                if (o != null && !IsValidPreCastTarget(o))
+                {
+                    SendInvalidPreCastTargetMessage(o);
+                    return;
+                }
+
+                if (o != null)
+                {
+                    m_Spell.InstantTarget = o;
+                }
+
+                m_Spell.Cast();
+            }
+
+            private bool IsValidPreCastTarget(object o)
+            {
+                if (!AllowGround && (o is LandTarget || o is StaticTarget))
+                {
+                    return false;
+                }
+
+                if (Flags == TargetFlags.Harmful && !(o is IDamageable))
+                {
+                    return false;
+                }
+
+                if (Flags == TargetFlags.Beneficial && !(o is Mobile) && !(o is IDamageable))
+                {
+                    return false;
+                }
+
+                return true;
+            }
+
+            private void SendInvalidPreCastTargetMessage(object o)
+            {
+                string name = null;
+
+                if (o is LandTarget)
+                {
+                    LandTarget land = (LandTarget)o;
+                    name = ApplyArticle(land.Name, land.Flags);
+                }
+                else if (o is StaticTarget)
+                {
+                    StaticTarget stat = (StaticTarget)o;
+                    name = ApplyArticle(stat.Name, stat.Flags);
+                }
+                else if (o is Item)
+                {
+                    name = ((Item)o).Name;
+                }
+                else if (o is Mobile)
+                {
+                    name = ((Mobile)o).Name;
+                }
+
+                if (!string.IsNullOrEmpty(name))
+                {
+                    m_Spell.Caster.SendMessage(string.Format("You cannot cast this spell on {0}.", name));
+                }
+                else
+                {
+                    m_Spell.Caster.SendLocalizedMessage(1046439); // That is not a valid target.
+                }
+            }
+
+            private static string ApplyArticle(string name, TileFlag flags)
+            {
+                if (string.IsNullOrEmpty(name))
+                {
+                    return name;
+                }
+
+                if ((flags & TileFlag.ArticleA) != 0)
+                {
+                    return "a " + name;
+                }
+
+                if ((flags & TileFlag.ArticleAn) != 0)
+                {
+                    return "an " + name;
+                }
+
+                return name;
+            }
         }
 
 		private class AnimTimer : Timer
