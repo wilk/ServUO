@@ -115,81 +115,8 @@ namespace Server.Items
         // For Forensics Evaluation
         public string m_Forensicist; // Name of the first PlayerMobile who used Forensic Evaluation on the corpse
 
-        public static readonly TimeSpan MonsterLootRightSacrifice = TimeSpan.FromMinutes(2.0);
-
-        public static readonly TimeSpan InstancedCorpseTime = TimeSpan.FromMinutes(3.0);
-
-        [CommandProperty(AccessLevel.GameMaster)]
-        public virtual bool InstancedCorpse
-        {
-            get
-            {
-                if (!Core.SE)
-                {
-                    return false;
-                }
-
-                return (DateTime.UtcNow < (m_TimeOfDeath + InstancedCorpseTime));
-            }
-        }
-
-        private Dictionary<Item, InstancedItemInfo> m_InstancedItems;
-
-        public bool HasAssignedInstancedLoot { get; private set; }
-
-        private class InstancedItemInfo
-        {
-            private readonly Mobile m_Mobile;
-            private readonly Item m_Item;
-
-            public bool Perpetual { get; set; }
-
-            public InstancedItemInfo(Item i, Mobile m)
-            {
-                m_Item = i;
-                m_Mobile = m;
-            }
-
-            public bool IsOwner(Mobile m)
-            {
-                if (m_Item.LootType == LootType.Cursed) //Cursed Items are part of everyone's instanced corpse... (?)
-                {
-                    return true;
-                }
-
-                if (m == null)
-                {
-                    return false; //sanity
-                }
-
-                if (m_Mobile == m)
-                {
-                    return true;
-                }
-
-                Party myParty = Party.Get(m_Mobile);
-
-                return (myParty != null && myParty == Party.Get(m));
-            }
-        }
-
         public override bool IsChildVisibleTo(Mobile m, Item child)
         {
-            if (!m.Player || m.IsStaff()) //Staff and creatures not subject to instancing.
-            {
-                return true;
-            }
-
-            if (m_InstancedItems != null)
-            {
-                InstancedItemInfo info;
-
-                if (m_InstancedItems.TryGetValue(child, out info) && (InstancedCorpse || info.Perpetual))
-                {
-                    return info.IsOwner(m); //IsOwner checks Party stuff.
-                }
-            }
-
             return true;
         }
 
@@ -197,144 +124,18 @@ namespace Server.Items
         {
             base.AddItem(item);
 
-            if (InstancedCorpse && HasAssignedInstancedLoot)
+            if (item.GetBounce() != null)
             {
-                if (item.GetBounce() != null)
-                {
-                    if (m_HasLooted == null)
-                        m_HasLooted = new List<Item>();
+                if (m_HasLooted == null)
+                    m_HasLooted = new List<Item>();
 
-                    m_HasLooted.Add(item);
-                }
-
-                AssignInstancedLoot(item);
+                m_HasLooted.Add(item);
             }
-        }
-
-        private void AssignInstancedLoot()
-        {
-            AssignInstancedLoot(this.Items);
-        }
-
-        public void AssignInstancedLoot(Item item)
-        {
-            AssignInstancedLoot(new Item[] { item });
-        }
-
-        private void AssignInstancedLoot(IEnumerable<Item> items)
-        {
-            if (m_Aggressors.Count == 0 || Items.Count == 0)
-            {
-                return;
-            }
-
-            if (m_InstancedItems == null)
-            {
-                m_InstancedItems = new Dictionary<Item, InstancedItemInfo>();
-            }
-
-            var stackables = new List<Item>();
-            var unstackables = new List<Item>();
-
-            foreach (var item in items.Where(i => !m_InstancedItems.ContainsKey(i)))
-            {
-                if (item.LootType != LootType.Cursed) //Don't have curesd items take up someone's item spot.. (?)
-                {
-                    if (item.Stackable)
-                    {
-                        stackables.Add(item);
-                    }
-                    else
-                    {
-                        unstackables.Add(item);
-                    }
-                }
-            }
-
-            var attackers = new List<Mobile>(m_Aggressors);
-
-            for (int i = 1; i < attackers.Count - 1; i++) //randomize
-            {
-                int rand = Utility.Random(i + 1);
-
-                Mobile temp = attackers[rand];
-                attackers[rand] = attackers[i];
-                attackers[i] = temp;
-            }
-
-            //stackables first, for the remaining stackables, have those be randomly added after
-            for (int i = 0; i < stackables.Count; i++)
-            {
-                Item item = stackables[i];
-
-                if (item.Amount >= attackers.Count)
-                {
-                    int amountPerAttacker = (item.Amount / attackers.Count);
-                    int remainder = (item.Amount % attackers.Count);
-
-                    for (int j = 0; j < ((remainder == 0) ? attackers.Count - 1 : attackers.Count); j++)
-                    {
-                        Item splitItem = Mobile.LiftItemDupe(item, item.Amount - amountPerAttacker);
-                        //LiftItemDupe automagically adds it as a child item to the corpse
-
-                        if (!m_InstancedItems.ContainsKey(splitItem))
-                        {
-                            m_InstancedItems.Add(splitItem, new InstancedItemInfo(splitItem, attackers[j]));
-                        }
-                        //What happens to the remaining portion?  TEMP FOR NOW UNTIL OSI VERIFICATION:  Treat as Single Item.
-                    }
-
-                    if (remainder == 0)
-                    {
-                        if (!m_InstancedItems.ContainsKey(item))
-                        {
-                            m_InstancedItems.Add(item, new InstancedItemInfo(item, attackers[attackers.Count - 1]));
-                        }
-                        //Add in the original item (which has an equal amount as the others) to the instance for the last attacker, cause it wasn't added above.
-                    }
-                    else
-                    {
-                        unstackables.Add(item);
-                    }
-                }
-                else
-                {
-                    //What happens in this case?  TEMP FOR NOW UNTIL OSI VERIFICATION:  Treat as Single Item.
-                    unstackables.Add(item);
-                }
-            }
-
-            for (int i = 0; i < unstackables.Count; i++)
-            {
-                Mobile m = attackers[i % attackers.Count];
-                Item item = unstackables[i];
-
-                if (!m_InstancedItems.ContainsKey(item))
-                {
-                    m_InstancedItems.Add(item, new InstancedItemInfo(item, m));
-                }
-            }
-
-            ColUtility.Free(stackables);
-            ColUtility.Free(unstackables);
         }
 
         public void AddCarvedItem(Item carved, Mobile carver)
         {
             DropItem(carved);
-
-            if (InstancedCorpse)
-            {
-                if (m_InstancedItems == null)
-                {
-                    m_InstancedItems = new Dictionary<Item, InstancedItemInfo>();
-                }
-
-                if (!m_InstancedItems.ContainsKey(carved))
-                {
-                    m_InstancedItems.Add(carved, new InstancedItemInfo(carved, carver));
-                }
-            }
         }
 
         public override bool IsDecoContainer { get { return false; } }
@@ -553,12 +354,7 @@ namespace Server.Items
                     }
                 }
 
-                if (!owner.Player)
-                {
-                    c.AssignInstancedLoot();
-                    c.HasAssignedInstancedLoot = true;
-                }
-                else if (Core.AOS)
+                if (owner.Player && Core.AOS)
                 {
                     PlayerMobile pm = owner as PlayerMobile;
 
@@ -1001,27 +797,7 @@ namespace Server.Items
 
         public bool IsCriminalAction(Mobile from)
         {
-            if (from == m_Owner || from.AccessLevel >= AccessLevel.GameMaster)
-            {
-                return false;
-            }
-
-            if (!GetFlag(CorpseFlag.LootCriminal))
-                return false;
-
-            Party p = Party.Get(m_Owner);
-
-            if (p != null && p.Contains(from))
-            {
-                PartyMemberInfo pmi = p[m_Owner];
-
-                if (pmi != null && pmi.CanLoot)
-                {
-                    return false;
-                }
-            }
-
-            return (NotorietyHandlers.CorpseNotoriety(from, this) == Notoriety.Innocent);
+            return false;
         }
 
         public override bool CheckItemUse(Mobile from, Item item)
@@ -1069,20 +845,10 @@ namespace Server.Items
                 from.RevealingAction();
             }
 
-            if (item != this && IsCriminalAction(from))
-            {
-                from.CriminalAction(true);
-            }
-
             if (!m_Looters.Contains(from))
             {
                 m_Looters.Add(from);
             }
-
-            //if (m_InstancedItems != null && m_InstancedItems.ContainsKey(item))
-            //{
-            //	m_InstancedItems.Remove(item);
-            //}
         }
 
         public override void OnItemLifted(Mobile from, Item item)
@@ -1094,20 +860,10 @@ namespace Server.Items
                 from.RevealingAction();
             }
 
-            if (item != this && IsCriminalAction(from))
-            {
-                from.CriminalAction(true);
-            }
-
             if (!m_Looters.Contains(from))
             {
                 m_Looters.Add(from);
             }
-
-            //if (m_InstancedItems != null && m_InstancedItems.ContainsKey(item))
-            //{
-            //	m_InstancedItems.Remove(item);
-            //}
         }
 
         private class OpenCorpseEntry : ContextMenuEntry
@@ -1181,48 +937,11 @@ namespace Server.Items
 
         public bool CanLoot(Mobile from, Item item)
         {
-            if (!IsCriminalAction(from))
-            {
-                return true;
-            }
-
-            Map map = Map;
-
-            if (map == null || (map.Rules & MapRules.HarmfulRestrictions) != 0)
-            {
-                return false;
-            }
-
             return true;
         }
 
         public bool CheckLoot(Mobile from, Item item)
         {
-            if (!CanLoot(from, item))
-            {
-                if (m_Owner == null || !m_Owner.Player)
-                {
-                    from.SendLocalizedMessage(1005035); // You did not earn the right to loot this creature!
-                }
-                else
-                {
-                    from.SendLocalizedMessage(1010049); // You may not loot this corpse.
-                }
-
-                return false;
-            }
-            else if (IsCriminalAction(from))
-            {
-                if (m_Owner == null || !m_Owner.Player)
-                {
-                    from.SendLocalizedMessage(1005036); // Looting this monster corpse will be a criminal act!
-                }
-                else
-                {
-                    from.SendLocalizedMessage(1005038); // Looting this corpse will be a criminal act!
-                }
-            }
-
             return true;
         }
 
@@ -1479,20 +1198,6 @@ namespace Server.Items
 
         public bool Carve(Mobile from, Item item)
         {
-            if (IsCriminalAction(from) && Map != null && (Map.Rules & MapRules.HarmfulRestrictions) != 0)
-            {
-                if (m_Owner == null || !m_Owner.Player)
-                {
-                    from.SendLocalizedMessage(1005035); // You did not earn the right to loot this creature!
-                }
-                else
-                {
-                    from.SendLocalizedMessage(1010049); // You may not loot this corpse.
-                }
-
-                return false;
-            }
-
             Mobile dead = m_Owner;
 
             if (GetFlag(CorpseFlag.Carved) || dead == null)
@@ -1517,11 +1222,6 @@ namespace Server.Items
                 ItemID = Utility.Random(0xECA, 9); // bone graphic
                 Hue = 0;
                 ProcessDelta();
-
-                if (IsCriminalAction(from))
-                {
-                    from.CriminalAction(true);
-                }
             }
             else if (dead is BaseCreature)
             {
