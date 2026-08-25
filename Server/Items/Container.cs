@@ -2041,7 +2041,14 @@ namespace Server.Items
                 {
                     if (MaxItems == 0)
                     {
-                        list.Add(1050044, "{0}\t{1}", TotalItems, TotalWeight); // ~1_COUNT~ items, ~2_WEIGHT~ stones
+                        if (MaxWeight != 0)
+                        {
+                            list.Add("{0} items, {1}/{2} stones", TotalItems, TotalWeight, MaxWeight); // no item cap, but weight is capped
+                        }
+                        else
+                        {
+                            list.Add(1050044, "{0}\t{1}", TotalItems, TotalWeight); // ~1_COUNT~ items, ~2_WEIGHT~ stones
+                        }
                     }
                     else if (ParentsContain<Item>() || IsLockedDown || IsSecure) //Root Parent is the Mobile.  Parent could be another containter.
                     {
