@@ -7934,7 +7934,7 @@ namespace Server.Mobiles
                 World.Mobiles.Values,
                 m =>
                 {
-                    if (m is BaseMount && ((BaseMount)m).Rider != null)
+                    if (m is IMount && ((IMount)m).Rider != null)
                     {
                         ((BaseCreature)m).OwnerAbandonTime = DateTime.MinValue;
                     }

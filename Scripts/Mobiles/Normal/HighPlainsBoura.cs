@@ -5,9 +5,12 @@ using Server.Network;
 namespace Server.Mobiles
 {
     [CorpseName("a boura corpse")]
-    public class HighPlainsBoura : BaseCreature, ICarvable
+    public class HighPlainsBoura : BaseCreature, ICarvable, IMount
     {
         private bool GatheredFur { get; set; }
+
+        private Mobile m_Rider;
+        private Item m_MountItem;
 
         [Constructable]
         public HighPlainsBoura()
@@ -15,6 +18,8 @@ namespace Server.Mobiles
         {
             Name = "a high plains boura";
             Body = 715;
+
+            m_MountItem = new CreatureMountItem(this, 0x3EC6);
 
             SetStr(400, 435);
             SetDex(90, 96);
@@ -52,6 +57,52 @@ namespace Server.Mobiles
 
         public HighPlainsBoura(Serial serial) : base(serial)
         {
+        }
+
+        [CommandProperty(AccessLevel.GameMaster)]
+        public Mobile Rider
+        {
+            get
+            {
+                return m_Rider;
+            }
+            set
+            {
+                MountableCreature.SetRider(this, value, ref m_Rider, m_MountItem);
+            }
+        }
+
+        public void OnRiderDamaged(Mobile from, ref int amount, bool willKill)
+        {
+        }
+
+        public override void OnDoubleClick(Mobile from)
+        {
+            MountableCreature.TryMount(this, from);
+        }
+
+        public override bool OnBeforeDeath()
+        {
+            Rider = null;
+
+            return base.OnBeforeDeath();
+        }
+
+        public override void OnDelete()
+        {
+            Rider = null;
+
+            base.OnDelete();
+        }
+
+        public override void OnAfterDelete()
+        {
+            if (m_MountItem != null)
+                m_MountItem.Delete();
+
+            m_MountItem = null;
+
+            base.OnAfterDelete();
         }
 
         public override int Meat
@@ -141,8 +192,11 @@ namespace Server.Mobiles
         public override void Serialize(GenericWriter writer)
         {
             base.Serialize(writer);
-            writer.Write(2);
+            writer.Write(3);
             writer.Write(GatheredFur);
+
+            writer.Write(m_Rider);
+            writer.Write(m_MountItem);
         }
 
         public override void Deserialize(GenericReader reader)
@@ -156,6 +210,15 @@ namespace Server.Mobiles
             {
                 GatheredFur = reader.ReadBool();
             }
+
+            if (version >= 3)
+            {
+                m_Rider = reader.ReadMobile();
+                m_MountItem = reader.ReadItem();
+            }
+
+            if (m_MountItem == null)
+                m_MountItem = new CreatureMountItem(this, 0x3EC6);
         }
     }
 }

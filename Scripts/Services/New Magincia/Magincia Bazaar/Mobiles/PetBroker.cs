@@ -177,8 +177,8 @@ namespace Server.Engines.NewMagincia
 
         public static void SendToBrokerStables(BaseCreature pet)
         {
-            if (pet is BaseMount)
-                ((BaseMount)pet).Rider = null;
+            if (pet is IMount)
+                ((IMount)pet).Rider = null;
 
             pet.ControlTarget = null;
             pet.ControlOrder = OrderType.Stay;

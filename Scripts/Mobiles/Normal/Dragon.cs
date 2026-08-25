@@ -3,8 +3,11 @@ using System;
 namespace Server.Mobiles
 {
     [CorpseName("a dragon corpse")]
-    public class Dragon : BaseCreature
+    public class Dragon : BaseCreature, IMount
     {
+        private Mobile m_Rider;
+        private Item m_MountItem;
+
         [Constructable]
         public Dragon()
             : base(AIType.AI_Mage, FightMode.Closest, 10, 1, 0.2, 0.4)
@@ -12,6 +15,8 @@ namespace Server.Mobiles
             Name = "a dragon";
             Body = Utility.RandomList(12, 59);
             BaseSoundID = 362;
+
+            m_MountItem = new CreatureMountItem(this, 0x3EBE);
 
             SetStr(796, 825);
             SetDex(86, 105);
@@ -50,6 +55,52 @@ namespace Server.Mobiles
         public Dragon(Serial serial)
             : base(serial)
         {
+        }
+
+        [CommandProperty(AccessLevel.GameMaster)]
+        public Mobile Rider
+        {
+            get
+            {
+                return m_Rider;
+            }
+            set
+            {
+                MountableCreature.SetRider(this, value, ref m_Rider, m_MountItem);
+            }
+        }
+
+        public void OnRiderDamaged(Mobile from, ref int amount, bool willKill)
+        {
+        }
+
+        public override void OnDoubleClick(Mobile from)
+        {
+            MountableCreature.TryMount(this, from);
+        }
+
+        public override bool OnBeforeDeath()
+        {
+            Rider = null;
+
+            return base.OnBeforeDeath();
+        }
+
+        public override void OnDelete()
+        {
+            Rider = null;
+
+            base.OnDelete();
+        }
+
+        public override void OnAfterDelete()
+        {
+            if (m_MountItem != null)
+                m_MountItem.Delete();
+
+            m_MountItem = null;
+
+            base.OnAfterDelete();
         }
 
         public override bool ReacquireOnMovement
@@ -145,13 +196,25 @@ namespace Server.Mobiles
         public override void Serialize(GenericWriter writer)
         {
             base.Serialize(writer);
-            writer.Write((int)0);
+            writer.Write((int)1);
+
+            writer.Write(m_Rider);
+            writer.Write(m_MountItem);
         }
 
         public override void Deserialize(GenericReader reader)
         {
             base.Deserialize(reader);
             int version = reader.ReadInt();
+
+            if (version >= 1)
+            {
+                m_Rider = reader.ReadMobile();
+                m_MountItem = reader.ReadItem();
+            }
+
+            if (m_MountItem == null)
+                m_MountItem = new CreatureMountItem(this, 0x3EBE);
         }
     }
 }

@@ -405,8 +405,8 @@ namespace Server.Items
                 {
                     foreach (var pet in ((PlayerMobile)fighter).AllFollowers.OfType<BaseCreature>().Where(pet => pet.Alive &&
                                                                                                                  pet.InRange(fighter.Location, 5) &&
-                                                                                                                 !(pet is BaseMount &&
-                                                                                                                 ((BaseMount)pet).Rider != null) &&
+                                                                                                                 !(pet is IMount &&
+                                                                                                                 ((IMount)pet).Rider != null) &&
                                                                                                                  CanEnter(pet)))
                     {
                         pet.FixedParticles(0x376A, 9, 32, 0x13AF, EffectLayer.Waist);
@@ -515,9 +515,9 @@ namespace Server.Items
                                                                                                              pet.Map != Map.Internal &&
                                                                                                              MobileIsInBossArea(pet)))
                 {
-                    if (pet is BaseMount)
+                    if (pet is IMount)
                     {
-                        BaseMount mount = (BaseMount)pet;
+                        IMount mount = (IMount)pet;
 
                         if (mount.Rider != null && mount.Rider != fighter)
                         {

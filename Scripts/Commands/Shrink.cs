@@ -53,7 +53,7 @@ namespace Server.Commands
                 {
                     from.SendMessage("You may not shrink a stabled creature.");
                 }
-                else if (creature is BaseMount && ((BaseMount)creature).Rider != null)
+                else if (creature is IMount && ((IMount)creature).Rider != null)
                 {
                     from.SendMessage("You may not shrink a mounted creature.");
                 }
