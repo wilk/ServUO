@@ -1716,7 +1716,7 @@ namespace Server.Engines.Craft
 						#region Mondain's Legacy
 						if (hammer is HammerOfHephaestus)
 						{
-							if (hammer.UsesRemaining > 0)
+							if (hammer.UsesRemaining > 0 && Server.Durability.CheckWear())
 							{
 								hammer.UsesRemaining--;
 							}
@@ -1728,7 +1728,10 @@ namespace Server.Engines.Craft
 						}
 						else
 						{
-							hammer.UsesRemaining--;
+							if (Server.Durability.CheckWear())
+							{
+								hammer.UsesRemaining--;
+							}
 
 							if (hammer.UsesRemaining < 1)
 							{
