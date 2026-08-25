@@ -256,18 +256,7 @@ namespace Server.Misc
 				else if (cretOwner.AlwaysMurderer || cretOwner.IsAnimatedDead)
 					actual = Notoriety.Murderer;
 
-				if (DateTime.UtcNow >= (target.TimeOfDeath + Corpse.MonsterLootRightSacrifice))
-					return actual;
-
-				var sourceParty = Party.Get(source);
-
-				foreach (var m in target.Aggressors)
-				{
-					if (m == source || (sourceParty != null && Party.Get(m) == sourceParty) || (sourceGuild != null && m.Guild == sourceGuild))
-						return actual;
-				}
-
-				return Notoriety.Innocent;
+				return actual;
 			}
 			else
 			{
@@ -315,7 +304,7 @@ namespace Server.Misc
 						return Notoriety.CanBeAttacked;
 				}
 
-				return Notoriety.Innocent;
+				return Notoriety.CanBeAttacked;
 			}
 		}
 
