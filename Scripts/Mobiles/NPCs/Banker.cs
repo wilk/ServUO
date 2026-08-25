@@ -353,8 +353,8 @@ namespace Server.Mobiles
 										// Thou canst not withdraw so much at one time!
 										vendor.Say(500381);
 									}
-									else if (pack == null || pack.Deleted || !(pack.TotalWeight < pack.MaxWeight) ||
-											 !(pack.TotalItems < pack.MaxItems))
+									else if (pack == null || pack.Deleted || !(pack.MaxWeight == 0 || pack.TotalWeight < pack.MaxWeight) ||
+											 !(pack.MaxItems == 0 || pack.TotalItems < pack.MaxItems))
 									{
 										// Your backpack can't hold anything else.
 										vendor.Say(1048147);

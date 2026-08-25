@@ -891,7 +891,7 @@ namespace Server.Engines.Craft
 				return false;
 			}
 
-            if (ourPack.TotalItems >= ourPack.MaxItems || ourPack.TotalWeight >= ourPack.MaxWeight)
+            if ((ourPack.MaxItems != 0 && ourPack.TotalItems >= ourPack.MaxItems) || (ourPack.MaxWeight != 0 && ourPack.TotalWeight >= ourPack.MaxWeight))
             {
                 message = 1048147; // Your backpack can't hold anything else.
                 return false;

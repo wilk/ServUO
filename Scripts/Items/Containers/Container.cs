@@ -463,6 +463,22 @@ namespace Server.Items
                 }
             }
         }
+
+        public override int DefaultMaxItems
+        {
+            get
+            {
+                Mobile m = ParentEntity as Mobile;
+                if (m != null && m.Player && m.Backpack == this)
+                {
+                    return 0;
+                }
+                else
+                {
+                    return base.DefaultMaxItems;
+                }
+            }
+        }
         public bool Dye(Mobile from, DyeTub sender)
         {
             if (Deleted)
