@@ -99,38 +99,41 @@ namespace Server.Items
                     if (absorbed < 2)
                         absorbed = 2;
 
-                    int wear;
-
-                    if (weapon.Type == WeaponType.Bashing)
-                        wear = (absorbed / 2);
-                    else
-                        wear = Utility.Random(2);
-
-                    if (wear > 0 && MaxHitPoints > 0)
+                    if (Server.Durability.CheckWear())
                     {
-                        if (HitPoints >= wear)
-                        {
-                            HitPoints -= wear;
-                            wear = 0;
-                        }
+                        int wear;
+
+                        if (weapon.Type == WeaponType.Bashing)
+                            wear = (absorbed / 2);
                         else
-                        {
-                            wear -= HitPoints;
-                            HitPoints = 0;
-                        }
+                            wear = Utility.Random(2);
 
-                        if (wear > 0)
+                        if (wear > 0 && MaxHitPoints > 0)
                         {
-                            if (MaxHitPoints > wear)
+                            if (HitPoints >= wear)
                             {
-                                MaxHitPoints -= wear;
-
-                                if (Parent is Mobile)
-                                    ((Mobile)Parent).LocalOverheadMessage(MessageType.Regular, 0x3B2, 1061121); // Your equipment is severely damaged.
+                                HitPoints -= wear;
+                                wear = 0;
                             }
                             else
                             {
-                                Delete();
+                                wear -= HitPoints;
+                                HitPoints = 0;
+                            }
+
+                            if (wear > 0)
+                            {
+                                if (MaxHitPoints > wear)
+                                {
+                                    MaxHitPoints -= wear;
+
+                                    if (Parent is Mobile)
+                                        ((Mobile)Parent).LocalOverheadMessage(MessageType.Regular, 0x3B2, 1061121); // Your equipment is severely damaged.
+                                }
+                                else
+                                {
+                                    Delete();
+                                }
                             }
                         }
                     }
@@ -170,33 +173,36 @@ namespace Server.Items
 
                     if (25 > Utility.Random(100)) // 25% chance to lower durability
                     {
-                        int wear = Utility.Random(2);
-
-                        if (wear > 0 && MaxHitPoints > 0)
+                        if (Server.Durability.CheckWear())
                         {
-                            if (HitPoints >= wear)
-                            {
-                                HitPoints -= wear;
-                                wear = 0;
-                            }
-                            else
-                            {
-                                wear -= HitPoints;
-                                HitPoints = 0;
-                            }
+                            int wear = Utility.Random(2);
 
-                            if (wear > 0)
+                            if (wear > 0 && MaxHitPoints > 0)
                             {
-                                if (MaxHitPoints > wear)
+                                if (HitPoints >= wear)
                                 {
-                                    MaxHitPoints -= wear;
-
-                                    if (Parent is Mobile)
-                                        ((Mobile)Parent).LocalOverheadMessage(MessageType.Regular, 0x3B2, 1061121); // Your equipment is severely damaged.
+                                    HitPoints -= wear;
+                                    wear = 0;
                                 }
                                 else
                                 {
-                                    Delete();
+                                    wear -= HitPoints;
+                                    HitPoints = 0;
+                                }
+
+                                if (wear > 0)
+                                {
+                                    if (MaxHitPoints > wear)
+                                    {
+                                        MaxHitPoints -= wear;
+
+                                        if (Parent is Mobile)
+                                            ((Mobile)Parent).LocalOverheadMessage(MessageType.Regular, 0x3B2, 1061121); // Your equipment is severely damaged.
+                                    }
+                                    else
+                                    {
+                                        Delete();
+                                    }
                                 }
                             }
                         }

@@ -2484,28 +2484,31 @@ namespace Server.Items
                 }
                 else
                 {
-                    if (m_MaxHits > 0)
+                    if (Durability.CheckWear())
                     {
-                        if (m_Hits >= 1)
+                        if (m_MaxHits > 0)
                         {
-                            if (splintering)
+                            if (m_Hits >= 1)
                             {
-                                HitPoints = Math.Max(0, HitPoints - 10);
+                                if (splintering)
+                                {
+                                    HitPoints = Math.Max(0, HitPoints - 10);
+                                }
+                                else
+                                {
+                                    HitPoints--;
+                                }
                             }
-                            else
+                            else if (m_MaxHits > 0)
                             {
-                                HitPoints--;
+                                MaxHitPoints--;
+
+                                if (Parent is Mobile)
+                                    ((Mobile)Parent).LocalOverheadMessage(MessageType.Regular, 0x3B2, 1061121); // Your equipment is severely damaged.
+
+                                if (m_MaxHits <= 0)
+                                    Delete();
                             }
-                        }
-                        else if (m_MaxHits > 0)
-                        {
-                            MaxHitPoints--;
-
-                            if (Parent is Mobile)
-                                ((Mobile)Parent).LocalOverheadMessage(MessageType.Regular, 0x3B2, 1061121); // Your equipment is severely damaged.
-
-                            if (m_MaxHits <= 0)
-                                Delete();
                         }
                     }
                 }

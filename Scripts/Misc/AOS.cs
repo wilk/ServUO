@@ -3289,6 +3289,9 @@ namespace Server
                 if (dur == null)
                     continue;
 
+                if (!Durability.CheckWear())
+                    continue;
+
                 if (dur.HitPoints >= 1)
                 {
                     if (dur.HitPoints >= 4)

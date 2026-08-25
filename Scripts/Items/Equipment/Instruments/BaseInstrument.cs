@@ -262,6 +262,9 @@ namespace Server.Items
         public void ConsumeUse(Mobile from)
         {
             // TODO: Confirm what must happen here?
+            if (!Durability.CheckWear())
+                return;
+
             if (UsesRemaining > 1)
             {
                 --UsesRemaining;

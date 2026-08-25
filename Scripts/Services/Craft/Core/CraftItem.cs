@@ -1912,7 +1912,8 @@ namespace Server.Engines.Craft
 					}
 				}
 
-                tool.UsesRemaining--;
+                if (Durability.CheckWear())
+                    tool.UsesRemaining--;
 
                 #region Mondain's Legacy
                 if (tool is HammerOfHephaestus)
@@ -2033,7 +2034,8 @@ namespace Server.Engines.Craft
 					return;
 				}
 
-				tool.UsesRemaining--;
+				if (Durability.CheckWear())
+					tool.UsesRemaining--;
 
                 if (tool.UsesRemaining < 1 && tool.BreakOnDepletion)
 				{
