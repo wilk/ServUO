@@ -1360,12 +1360,91 @@ namespace Server.Spells
 
             protected override void OnTarget(Mobile from, object o)
             {
+                if (o != null && !IsValidPreCastTarget(o))
+                {
+                    SendInvalidPreCastTargetMessage(o);
+                    return;
+                }
+
                 if (o != null)
                 {
                     m_Spell.InstantTarget = o;
                 }
 
                 m_Spell.Cast();
+            }
+
+            private bool IsValidPreCastTarget(object o)
+            {
+                if (!AllowGround && (o is LandTarget || o is StaticTarget))
+                {
+                    return false;
+                }
+
+                if (Flags == TargetFlags.Harmful && !(o is IDamageable))
+                {
+                    return false;
+                }
+
+                if (Flags == TargetFlags.Beneficial && !(o is Mobile) && !(o is IDamageable))
+                {
+                    return false;
+                }
+
+                return true;
+            }
+
+            private void SendInvalidPreCastTargetMessage(object o)
+            {
+                string name = null;
+
+                if (o is LandTarget)
+                {
+                    LandTarget land = (LandTarget)o;
+                    name = ApplyArticle(land.Name, land.Flags);
+                }
+                else if (o is StaticTarget)
+                {
+                    StaticTarget stat = (StaticTarget)o;
+                    name = ApplyArticle(stat.Name, stat.Flags);
+                }
+                else if (o is Item)
+                {
+                    name = ((Item)o).Name;
+                }
+                else if (o is Mobile)
+                {
+                    name = ((Mobile)o).Name;
+                }
+
+                if (!string.IsNullOrEmpty(name))
+                {
+                    m_Spell.Caster.SendMessage(string.Format("You cannot cast this spell on {0}.", name));
+                }
+                else
+                {
+                    m_Spell.Caster.SendLocalizedMessage(1046439); // That is not a valid target.
+                }
+            }
+
+            private static string ApplyArticle(string name, TileFlag flags)
+            {
+                if (string.IsNullOrEmpty(name))
+                {
+                    return name;
+                }
+
+                if ((flags & TileFlag.ArticleA) != 0)
+                {
+                    return "a " + name;
+                }
+
+                if ((flags & TileFlag.ArticleAn) != 0)
+                {
+                    return "an " + name;
+                }
+
+                return name;
             }
         }
 
