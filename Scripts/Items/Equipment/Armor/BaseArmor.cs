@@ -2617,36 +2617,39 @@ namespace Server.Items
                 }
                 else
                 {
-                    int wear = 1;
-
-                    if (weapon.Type == WeaponType.Bashing)
-                        wear = Absorbed / 2;
-
-                    if (wear > 0 && m_MaxHitPoints > 0)
+                    if (Server.Durability.CheckWear())
                     {
-                        if (m_HitPoints >= wear)
-                        {
-                            HitPoints -= wear;
-                            wear = 0;
-                        }
-                        else
-                        {
-                            wear -= HitPoints;
-                            HitPoints = 0;
-                        }
+                        int wear = 1;
 
-                        if (wear > 0)
+                        if (weapon.Type == WeaponType.Bashing)
+                            wear = Absorbed / 2;
+
+                        if (wear > 0 && m_MaxHitPoints > 0)
                         {
-                            if (m_MaxHitPoints > wear)
+                            if (m_HitPoints >= wear)
                             {
-                                MaxHitPoints -= wear;
-
-                                if (Parent is Mobile)
-                                    ((Mobile)Parent).LocalOverheadMessage(MessageType.Regular, 0x3B2, 1061121); // Your equipment is severely damaged.
+                                HitPoints -= wear;
+                                wear = 0;
                             }
                             else
                             {
-                                Delete();
+                                wear -= HitPoints;
+                                HitPoints = 0;
+                            }
+
+                            if (wear > 0)
+                            {
+                                if (m_MaxHitPoints > wear)
+                                {
+                                    MaxHitPoints -= wear;
+
+                                    if (Parent is Mobile)
+                                        ((Mobile)Parent).LocalOverheadMessage(MessageType.Regular, 0x3B2, 1061121); // Your equipment is severely damaged.
+                                }
+                                else
+                                {
+                                    Delete();
+                                }
                             }
                         }
                     }

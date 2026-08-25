@@ -897,7 +897,8 @@ namespace Server.Engines.Craft
 
                     if (tool != null)
                     {
-                        tool.UsesRemaining--;
+                        if (Durability.CheckWear())
+                            tool.UsesRemaining--;
 
                         if (tool.UsesRemaining <= 0 && !tool.Deleted)
                         {
@@ -973,7 +974,8 @@ namespace Server.Engines.Craft
 
                     if (tool != null)
                     {
-                        tool.UsesRemaining--;
+                        if (Durability.CheckWear())
+                            tool.UsesRemaining--;
 
                         if (tool.UsesRemaining <= 0 && !tool.Deleted)
                         {

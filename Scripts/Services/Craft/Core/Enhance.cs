@@ -130,7 +130,9 @@ namespace Server.Engines.Craft
                 AncientSmithyHammer hammer = from.FindItemOnLayer(Layer.OneHanded) as AncientSmithyHammer;
                 if (hammer != null)
                 {
-                    hammer.UsesRemaining--;
+                    if (Server.Durability.CheckWear())
+                        hammer.UsesRemaining--;
+
                     if (hammer.UsesRemaining < 1)
                         hammer.Delete();
                 }

@@ -245,7 +245,7 @@ namespace Server.Engines.Harvest
 
                     toolWithUses.ShowUsesRemaining = true;
 
-                    if (toolWithUses.UsesRemaining > 0)
+                    if (toolWithUses.UsesRemaining > 0 && Durability.CheckWear())
                         --toolWithUses.UsesRemaining;
 
                     if (toolWithUses.UsesRemaining < 1)

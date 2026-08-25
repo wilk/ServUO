@@ -509,20 +509,23 @@ namespace Server.Items
             int chance = m_NegativeAttributes.Antique > 0 ? 50 : 25;
             if (chance > Utility.Random(100)) // 25% chance to lower durability
             {
-                if (m_HitPoints >= 1)
+                if (Durability.CheckWear())
                 {
-                    HitPoints--;
-                }
-                else if (m_MaxHitPoints > 0)
-                {
-                    MaxHitPoints--;
-
-                    if (Parent is Mobile)
-                        ((Mobile)Parent).LocalOverheadMessage(Server.Network.MessageType.Regular, 0x3B2, 1061121); // Your equipment is severely damaged.
-
-                    if (m_MaxHitPoints == 0)
+                    if (m_HitPoints >= 1)
                     {
-                        Delete();
+                        HitPoints--;
+                    }
+                    else if (m_MaxHitPoints > 0)
+                    {
+                        MaxHitPoints--;
+
+                        if (Parent is Mobile)
+                            ((Mobile)Parent).LocalOverheadMessage(Server.Network.MessageType.Regular, 0x3B2, 1061121); // Your equipment is severely damaged.
+
+                        if (m_MaxHitPoints == 0)
+                        {
+                            Delete();
+                        }
                     }
                 }
             }
