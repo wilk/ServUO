@@ -88,7 +88,7 @@ namespace Server.Items
 					{
 						Spell sp = attacker.Spell as Spell;
 
-						canSwing = (sp == null || !sp.IsCasting || !sp.BlocksMovement);
+						canSwing = (sp == null || !sp.IsCasting || !sp.BlocksWeaponSwing);
 					}
 				}
 

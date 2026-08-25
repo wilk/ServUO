@@ -1724,7 +1724,7 @@ namespace Server.Items
 				{
 					Spell sp = attacker.Spell as Spell;
 
-					canSwing = (sp == null || !sp.IsCasting || !sp.BlocksMovement);
+					canSwing = (sp == null || !sp.IsCasting || !sp.BlocksWeaponSwing);
 				}
 
 				if (canSwing)
@@ -1804,7 +1804,7 @@ namespace Server.Items
 
             Spell sp = attacker.Spell as Spell;
 
-            return sp == null || !sp.IsCasting || !sp.BlocksMovement;
+            return sp == null || !sp.IsCasting || !sp.BlocksWeaponSwing;
         }
 
         // Issue #13: resolves the swing that OnSwing deferred. Re-checks the

@@ -27,6 +27,7 @@ namespace Server.Spells.SkillMasteries
 
         public override bool BlockedByAnimalForm { get { return false; } }
         public override bool BlocksMovement { get { return false; } }
+        public override bool BlocksWeaponSwing { get { return false; } }
         public override int CastRecoveryBase { get { return (Core.ML ? 10 : base.CastRecoveryBase); } }
 
         public WhiteTigerFormSpell(Mobile caster, Item scroll)

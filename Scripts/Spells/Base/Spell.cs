@@ -30,7 +30,7 @@ namespace Server.Spells
 		private readonly SpellInfo m_Info;
 		private SpellState m_State;
 		private long m_StartCastTime;
-        private IDamageable m_InstantTarget;
+        private object m_InstantTarget;
         private bool m_AskedForTarget;
 
         private static readonly bool m_MoveWhileCasting = Config.Get("Spells.MoveWhileCasting", true);
@@ -49,7 +49,7 @@ namespace Server.Spells
 		public Item Scroll { get { return m_Scroll; } }
 		public long StartCastTime { get { return m_StartCastTime; } }
 
-        public IDamageable InstantTarget { get { return m_InstantTarget; } set { m_InstantTarget = value; } }
+        public object InstantTarget { get { return m_InstantTarget; } set { m_InstantTarget = value; } }
 
         private static readonly TimeSpan NextSpellDelay = TimeSpan.FromSeconds(0.75);
 		private static TimeSpan AnimateDelay = TimeSpan.FromSeconds(1.5);
@@ -750,6 +750,7 @@ namespace Server.Spells
 
 		public virtual bool BlockedByAnimalForm { get { return true; } }
 		public virtual bool BlocksMovement { get { return !m_MoveWhileCasting; } }
+		public virtual bool BlocksWeaponSwing { get { return true; } }
 
 		public virtual bool CheckNextSpellTime { get { return !(m_Scroll is BaseWand); } }
 
@@ -795,6 +796,10 @@ namespace Server.Spells
 			{
 				m_Caster.SendLocalizedMessage(1072060); // You cannot cast a spell while calmed.
 			}
+            else if (!CheckSpellbookInHand())
+            {
+                // CheckSpellbookInHand already sent the refusal message.
+            }
             else if (m_Caster.Mana >= ScaleMana(GetMana()))
             {
                 #region Stygian Abyss
@@ -816,7 +821,7 @@ namespace Server.Spells
                 #endregion
 
                 if (m_Caster.Spell == null && m_Caster.CheckSpellCast(this) && CheckCast() &&
-                    m_Caster.Region.OnBeginSpellCast(m_Caster, this) && CheckSpellbookInHand())
+                    m_Caster.Region.OnBeginSpellCast(m_Caster, this))
                 {
                     if (!m_AskedForTarget && m_TargetBeforeCast && InstantTarget == null &&
                         m_Caster.Player && m_Caster.NetState != null)
@@ -1355,11 +1360,9 @@ namespace Server.Spells
 
             protected override void OnTarget(Mobile from, object o)
             {
-                IDamageable damageable = o as IDamageable;
-
-                if (damageable != null)
+                if (o != null)
                 {
-                    m_Spell.InstantTarget = damageable;
+                    m_Spell.InstantTarget = o;
                 }
 
                 m_Spell.Cast();

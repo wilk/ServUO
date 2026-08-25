@@ -41,6 +41,13 @@ namespace Server.Spells.Bushido
                 return false;
             }
         }
+        public override bool BlocksWeaponSwing
+        {
+            get
+            {
+                return false;
+            }
+        }
         public override bool ShowHandMovement
         {
             get

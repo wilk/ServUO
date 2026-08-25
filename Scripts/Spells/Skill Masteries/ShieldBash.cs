@@ -20,6 +20,7 @@ namespace Server.Spells.SkillMasteries
 
         public override int RequiredMana { get { return 40; } }
         public override bool BlocksMovement { get { return false; } }
+        public override bool BlocksWeaponSwing { get { return false; } }
         public override TimeSpan CastDelayBase { get { return TimeSpan.FromSeconds(1.0); } }
 
         public override SkillName CastSkill { get { return SkillName.Parry; } }
