@@ -683,8 +683,8 @@ namespace Server.Items
                                 count = m_Summoner.Amount;
                         }
 
-                        if (from.Backpack == null || count * item.Weight > from.Backpack.MaxWeight ||
-                            from.Backpack.Items.Count + count > from.Backpack.MaxItems)
+                        if (from.Backpack == null || (from.Backpack.MaxWeight != 0 && count * item.Weight > from.Backpack.MaxWeight) ||
+                            (from.Backpack.MaxItems != 0 && from.Backpack.Items.Count + count > from.Backpack.MaxItems))
                         {
                             from.SendLocalizedMessage(500720); // You don't have enough room in your backpack!
                             item.Delete();
