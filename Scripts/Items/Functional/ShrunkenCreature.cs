@@ -149,6 +149,13 @@ namespace Server.Items
                 }
             }
 
+            // The claim above never touches the tame skill or the loyalty. Without this, a
+            // finder with no taming skill fails every order of a creature with a tame skill
+            // above 29.1, and CheckControlChance keeps dropping the loyalty on every failure.
+            // MinTameSkill stays untouched: its setter would overwrite CurrentTameSkill.
+            m_Creature.CurrentTameSkill = 0.0;
+            m_Creature.Loyalty = BaseCreature.MaxLoyalty;
+
             if (oldMaster != from)
             {
                 m_Creature.IsBonded = false;
