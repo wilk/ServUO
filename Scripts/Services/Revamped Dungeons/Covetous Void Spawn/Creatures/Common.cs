@@ -9,7 +9,6 @@ namespace Server.Mobiles
 		public DazzledHarpy()
 		{
 			Name = "a dazzled harpy";
-            FightMode = FightMode.Aggressor;
 
             SetHits(120, 140);
             SetStam(90, 110);
@@ -50,7 +49,6 @@ namespace Server.Mobiles
 		public VampireMongbat()
 		{
 			Name = "a vampire mongbat";
-            FightMode = FightMode.Aggressor;
             Hue = 1461;
 
             SetHits(76, 171);
@@ -98,7 +96,6 @@ namespace Server.Mobiles
 		public HeadlessMiner()
 		{
 			Name = "headless miner";
-            FightMode = FightMode.Aggressor;
 
             SetStr(60, 100);
             SetDex(40, 60);
