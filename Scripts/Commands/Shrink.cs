@@ -80,10 +80,6 @@ namespace Server.Commands
                     // An escortable that changes map loses its escorter and deletes itself.
                     from.SendMessage("You may not shrink a creature that is being escorted.");
                 }
-                else if (creature.Combatant != null || creature.Aggressors.Count > 0 || creature.Aggressed.Count > 0)
-                {
-                    from.SendMessage("That creature is busy fighting.");
-                }
                 else
                 {
                     var item = new ShrunkenCreature(creature);
@@ -94,6 +90,29 @@ namespace Server.Commands
                     // comes back. HitchingPost.EndStable does the same.
                     creature.ControlTarget = null;
                     creature.ControlOrder = OrderType.Stay;
+
+                    // [shrink accepts a creature that fights. Clear the fight on both sides
+                    // before the creature leaves the world, or a mobile on the live map keeps
+                    // a Combatant or an aggression entry that points at a creature it can no
+                    // longer reach. Copy the lists first: the removal below changes them.
+                    var aggressors = new AggressorInfo[creature.Aggressors.Count];
+                    creature.Aggressors.CopyTo(aggressors);
+
+                    var aggressed = new AggressorInfo[creature.Aggressed.Count];
+                    creature.Aggressed.CopyTo(aggressed);
+
+                    foreach (var info in aggressors)
+                    {
+                        ClearFight(creature, info.Attacker);
+                    }
+
+                    foreach (var info in aggressed)
+                    {
+                        ClearFight(creature, info.Defender);
+                    }
+
+                    creature.Combatant = null;
+                    creature.Warmode = false;
 
                     creature.Internalize();
 
@@ -111,6 +130,23 @@ namespace Server.Commands
                         CommandLogging.Format(creature));
 
                     from.SendMessage("The creature has been shrunk.");
+                }
+            }
+
+            // Drops the link between creature and other on both sides, in the pattern of
+            // BaseCreature.SetControlMaster. other keeps fighting nothing once the creature
+            // goes to the internal map, instead of a Combatant or an aggression entry that
+            // points at a mobile it can no longer reach.
+            private static void ClearFight(BaseCreature creature, Mobile other)
+            {
+                creature.RemoveAggressor(other);
+                creature.RemoveAggressed(other);
+                other.RemoveAggressor(creature);
+                other.RemoveAggressed(creature);
+
+                if (other.Combatant == creature)
+                {
+                    other.Combatant = null;
                 }
             }
         }
