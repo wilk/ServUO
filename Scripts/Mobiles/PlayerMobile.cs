@@ -1988,7 +1988,7 @@ namespace Server.Mobiles
 					strBase = RawStr;
 				}
 
-				return (strBase / 2) + 50 + strOffs;
+				return Math.Max(strBase, (strBase / 2) + 50) + strOffs;
 			}
 		}
 
