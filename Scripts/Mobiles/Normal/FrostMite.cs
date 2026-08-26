@@ -5,14 +5,19 @@ using Server.Items;
 namespace Server.Mobiles
 {
     [CorpseName("a beetle corpse")]
-    public class FrostMite : BaseCreature, IAuraCreature
+    public class FrostMite : BaseCreature, IAuraCreature, IMount
     {
+        private Mobile m_Rider;
+        private Item m_MountItem;
+
         [Constructable]
         public FrostMite() : base(AIType.AI_Melee, FightMode.Closest, 10, 1, 0.2, 0.4)
         {
             Name = "Frost Mite";
             Body = 0x590;
             Female = true;
+
+            m_MountItem = new CreatureMountItem(this, 0x3EDA);
 
             SetStr(1017);
             SetDex(164);
@@ -88,16 +93,74 @@ namespace Server.Mobiles
         {
         }
 
+        [CommandProperty(AccessLevel.GameMaster)]
+        public Mobile Rider
+        {
+            get
+            {
+                return m_Rider;
+            }
+            set
+            {
+                MountableCreature.SetRider(this, value, ref m_Rider, m_MountItem);
+            }
+        }
+
+        public void OnRiderDamaged(Mobile from, ref int amount, bool willKill)
+        {
+        }
+
+        public override void OnDoubleClick(Mobile from)
+        {
+            MountableCreature.TryMount(this, from);
+        }
+
+        public override bool OnBeforeDeath()
+        {
+            Rider = null;
+
+            return base.OnBeforeDeath();
+        }
+
+        public override void OnDelete()
+        {
+            Rider = null;
+
+            base.OnDelete();
+        }
+
+        public override void OnAfterDelete()
+        {
+            if (m_MountItem != null)
+                m_MountItem.Delete();
+
+            m_MountItem = null;
+
+            base.OnAfterDelete();
+        }
+
         public override void Serialize(GenericWriter writer)
         {
             base.Serialize(writer);
-            writer.Write((int)0); // version
+            writer.Write((int)1);
+
+            writer.Write(m_Rider);
+            writer.Write(m_MountItem);
         }
 
         public override void Deserialize(GenericReader reader)
         {
             base.Deserialize(reader);
             int version = reader.ReadInt();
+
+            if (version >= 1)
+            {
+                m_Rider = reader.ReadMobile();
+                m_MountItem = reader.ReadItem();
+            }
+
+            if (m_MountItem == null)
+                m_MountItem = new CreatureMountItem(this, 0x3EDA);
         }
     }
 }
