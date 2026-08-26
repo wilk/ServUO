@@ -21,6 +21,7 @@ namespace Server.Mobiles
     public abstract class BaseMount : BaseCreature, IMount
     {
         private static Dictionary<Mobile, BlockEntry> m_Table = new Dictionary<Mobile, BlockEntry>();
+        private static readonly Dictionary<Mobile, Timer> m_SwimGrantTimers = new Dictionary<Mobile, Timer>();
         private static readonly int MountRange = Math.Max(0, Config.Get("General.MountRange", 3));
         private Mobile m_Rider;
         private bool m_GrantedSwim;
@@ -137,22 +138,29 @@ namespace Server.Mobiles
 
                         if (m_GrantedSwim)
                         {
+                            // The grant no longer belongs to this mount either way: the ex-rider
+                            // keeps it only if a timer takes over below. This mount's bit must only
+                            // ever describe its current rider.
+                            m_GrantedSwim = false;
+
                             m_Rider.CanSwim = false;
 
                             if (m_Rider.Map != null && m_Rider.Map != Map.Internal &&
                                 !m_Rider.Map.CanFit(m_Rider.X, m_Rider.Y, m_Rider.Z, 16, false, false, true, m_Rider))
                             {
-                                // Revoking swim here would strand the rider over deep water; keep the grant until they reach dry ground.
+                                // Revoking swim here would strand the rider over deep water. Hand the
+                                // grant off to a timer that clears it once the ex-rider reaches dry land.
                                 m_Rider.CanSwim = true;
-                            }
-                            else
-                            {
-                                m_GrantedSwim = false;
+
+                                StartSwimGrantTimer(m_Rider);
                             }
                         }
                     }
                     else
                     {
+                        // A new mount grant supersedes any timer left over from a previous mount.
+                        StopSwimGrantTimer(value);
+
                         if (m_Rider != null)
                             Dismount(m_Rider);
 
@@ -394,6 +402,64 @@ namespace Server.Mobiles
                 m_Table.Remove(m);
 
             BuffInfo.RemoveBuff(m, BuffIcon.DismountPrevention);
+        }
+
+        // Enumerated by SwimGrantPersistence when it saves who is still owed a swim grant.
+        internal static ICollection<Mobile> SwimGrantRecipients { get { return m_SwimGrantTimers.Keys; } }
+
+        internal static void StartSwimGrantTimer(Mobile m)
+        {
+            StopSwimGrantTimer(m);
+
+            m_SwimGrantTimers[m] = new SwimGrantTimer(m);
+        }
+
+        public static void StopSwimGrantTimer(Mobile m)
+        {
+            Timer timer;
+
+            if (m != null && m_SwimGrantTimers.TryGetValue(m, out timer))
+            {
+                timer.Stop();
+                m_SwimGrantTimers.Remove(m);
+            }
+        }
+
+        private class SwimGrantTimer : Timer
+        {
+            private readonly Mobile m_Mobile;
+
+            public SwimGrantTimer(Mobile m)
+                : base(TimeSpan.FromSeconds(2.0), TimeSpan.FromSeconds(2.0))
+            {
+                m_Mobile = m;
+
+                Start();
+            }
+
+            protected override void OnTick()
+            {
+                if (m_Mobile.Deleted || m_Mobile.Map == null || m_Mobile.Map == Map.Internal || m_Mobile.Mounted)
+                {
+                    // Deleted, logged all the way out, or riding again: a new grant (or none)
+                    // takes over from here, so this timer has nothing left to watch.
+                    m_SwimGrantTimers.Remove(m_Mobile);
+                    Stop();
+                    return;
+                }
+
+                m_Mobile.CanSwim = false;
+
+                if (!m_Mobile.Map.CanFit(m_Mobile.X, m_Mobile.Y, m_Mobile.Z, 16, false, false, true, m_Mobile))
+                {
+                    // Still stranded over deep water; keep the grant and check again next tick.
+                    m_Mobile.CanSwim = true;
+                    return;
+                }
+
+                m_SwimGrantTimers.Remove(m_Mobile);
+                Stop();
+            }
         }
 
         public override void Serialize(GenericWriter writer)

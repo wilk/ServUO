@@ -46,6 +46,10 @@ namespace Server.Commands
                     mount.GrantedSwim = false;
                 }
 
+                // The GM override also replaces any pending ex-rider grant timer, so
+                // it does not fight this toggle a few seconds later.
+                BaseMount.StopSwimGrantTimer(mobile);
+
                 if (mobile.CanSwim)
                     from.SendMessage("{0} can now walk on water.", mobile.Name);
                 else
