@@ -45,7 +45,8 @@ namespace Server.Items
         Sakkhra,
         #endregion,
         Shatter,
-        FearEssence
+        FearEssence,
+        Shrink
     }
 
     public abstract class BasePotion : Item, ICraftable, ICommodity

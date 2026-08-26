@@ -232,7 +232,7 @@ namespace Server.Items
                 BasePotion pot = (BasePotion)item;
                 int toHold = Math.Min(100 - m_Held, pot.Amount);
 
-                if (pot.PotionEffect == PotionEffect.Darkglow || pot.PotionEffect == PotionEffect.Parasitic)
+                if (pot.PotionEffect == PotionEffect.Darkglow || pot.PotionEffect == PotionEffect.Parasitic || pot.PotionEffect == PotionEffect.Shrink)
                 {
                     from.SendLocalizedMessage(502232); // The keg is not designed to hold that type of object.
                     return false;
@@ -382,6 +382,9 @@ namespace Server.Items
 
                 case PotionEffect.Invisibility:
                     return new InvisibilityPotion();
+
+                case PotionEffect.Shrink:
+                    return new ShrinkPotion();
             }
         }
     }
