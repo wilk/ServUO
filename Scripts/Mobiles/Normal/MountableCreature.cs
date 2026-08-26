@@ -79,7 +79,7 @@ namespace Server.Mobiles
                 return;
             }
 
-            if (!BaseMount.CheckMountAllowed(from, true, false))
+            if (!BaseMount.CheckMountAllowed(from, (IMount)creature, true, false))
                 return;
 
             if (from.Mount is BaseBoat)
