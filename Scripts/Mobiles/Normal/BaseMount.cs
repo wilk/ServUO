@@ -23,6 +23,7 @@ namespace Server.Mobiles
         private static Dictionary<Mobile, BlockEntry> m_Table = new Dictionary<Mobile, BlockEntry>();
         private static readonly int MountRange = Math.Max(0, Config.Get("General.MountRange", 3));
         private Mobile m_Rider;
+        private bool m_GrantedSwim;
 
         public BaseMount(string name, int bodyID, int itemID, AIType aiType, FightMode fightMode, int rangePerception, int rangeFight, double activeSpeed, double passiveSpeed)
             : base(aiType, fightMode, rangePerception, rangeFight, activeSpeed, passiveSpeed)
@@ -133,6 +134,12 @@ namespace Server.Mobiles
 
                         if (InternalItem != null)
                             InternalItem.Internalize();
+
+                        if (m_GrantedSwim)
+                        {
+                            m_Rider.CanSwim = false;
+                            m_GrantedSwim = false;
+                        }
                     }
                     else
                     {
@@ -150,7 +157,26 @@ namespace Server.Mobiles
                     }
 
                     m_Rider = value;
+
+                    if (value != null && CanSwim && !value.CanSwim)
+                    {
+                        value.CanSwim = true;
+                        m_GrantedSwim = true;
+                    }
                 }
+            }
+        }
+
+        [CommandProperty(AccessLevel.GameMaster)]
+        public bool GrantedSwim
+        {
+            get
+            {
+                return m_GrantedSwim;
+            }
+            set
+            {
+                m_GrantedSwim = value;
             }
         }
 
@@ -364,7 +390,9 @@ namespace Server.Mobiles
         {
             base.Serialize(writer);
 
-            writer.Write((int)1); // version
+            writer.Write((int)2); // version
+
+            writer.Write(m_GrantedSwim);
 
             writer.Write(NextMountAbility);
 
@@ -421,6 +449,11 @@ namespace Server.Mobiles
 
             switch ( version )
             {
+                case 2:
+                    {
+                        m_GrantedSwim = reader.ReadBool();
+                        goto case 1;
+                    }
                 case 1:
                     {
                         NextMountAbility = reader.ReadDateTime();

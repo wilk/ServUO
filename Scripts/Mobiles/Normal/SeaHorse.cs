@@ -9,13 +9,14 @@ namespace Server.Mobiles
         public SeaHorse()
             : this("a sea horse")
         {
-			this.CanSwim = true;
         }
 
         [Constructable]
         public SeaHorse(string name)
             : base(name, 0x90, 0x3EB3, AIType.AI_Animal, FightMode.Aggressor, 10, 1, 0.2, 0.4)
         {
+            this.CanSwim = true;
+
             this.InitStats(Utility.Random(50, 30), Utility.Random(50, 30), 10);
             this.Skills[SkillName.MagicResist].Base = 25.0 + (Utility.RandomDouble() * 5.0);
             this.Skills[SkillName.Wrestling].Base = 35.0 + (Utility.RandomDouble() * 10.0);
