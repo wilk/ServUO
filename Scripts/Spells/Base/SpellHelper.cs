@@ -64,7 +64,8 @@ namespace Server.Spells
 
     public class SpellHelper
     {
-        private static readonly double m_DamageScalar = Config.Get("Spells.DamageScalar", 1.5);
+        // Issue #45: spell damage returns to the pub57 value.
+        private static readonly double m_DamageScalar = Config.Get("Spells.DamageScalar", 1.0);
 
         #region Spell Focus and SDI Calculations
         private static SkillName[] _Schools =

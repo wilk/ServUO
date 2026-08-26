@@ -35,7 +35,14 @@ namespace Server.Spells
 
         private static readonly bool m_MoveWhileCasting = Config.Get("Spells.MoveWhileCasting", true);
         private static readonly bool m_TargetBeforeCast = Config.Get("Spells.TargetBeforeCast", true);
-        private static readonly bool m_RequireEquippedSpellbook = Config.Get("Spells.RequireEquippedSpellbook", true);
+        // Issue #45: the spellbook only needs to sit in the backpack. The key
+        // defaults to false, so CheckSpellbookInHand returns true at once.
+        private static readonly bool m_RequireEquippedSpellbook = Config.Get("Spells.RequireEquippedSpellbook", false);
+        // Issue #45: the caster keeps the weapon in hand during a cast unless
+        // this key turns the old #32 behaviour back on.
+        private static readonly bool m_ClearHandsOnCast = Config.Get("Spells.ClearHandsOnCast", false);
+        // Issue #45: the caster can swing the weapon while a spell casts.
+        private static readonly bool m_SwingWhileCasting = Config.Get("Spells.SwingWhileCasting", true);
 
 		public int ID { get { return SpellRegistry.GetRegistryNumber(this); } }
 
@@ -750,7 +757,8 @@ namespace Server.Spells
 
 		public virtual bool BlockedByAnimalForm { get { return true; } }
 		public virtual bool BlocksMovement { get { return !m_MoveWhileCasting; } }
-		public virtual bool BlocksWeaponSwing { get { return true; } }
+		// Issue #45: SwingWhileCasting lets the weapon swing during a cast.
+		public virtual bool BlocksWeaponSwing { get { return !m_SwingWhileCasting; } }
 
 		public virtual bool CheckNextSpellTime { get { return !(m_Scroll is BaseWand); } }
 
@@ -877,7 +885,9 @@ namespace Server.Spells
                         }
                     }
 
-                    if (ClearHandsOnCast)
+                    // Issue #45: ClearHandsOnCast key gates the call. The caster
+                    // keeps the weapon in hand unless the key turns this on.
+                    if (m_ClearHandsOnCast && ClearHandsOnCast)
                     {
                         m_Caster.ClearHands();
                     }
@@ -1228,7 +1238,8 @@ namespace Server.Spells
 
 					m_Scroll.Movable = false;
 
-					if (ClearHandsOnCast)
+					// Issue #45: ClearHandsOnCast key gates the call.
+					if (m_ClearHandsOnCast && ClearHandsOnCast)
 					{
 						m_Caster.ClearHands();
 					}
@@ -1237,7 +1248,8 @@ namespace Server.Spells
 				}
 				else
 				{
-					if (ClearHandsOnCast)
+					// Issue #45: ClearHandsOnCast key gates the call.
+					if (m_ClearHandsOnCast && ClearHandsOnCast)
 					{
 						m_Caster.ClearHands();
 					}
