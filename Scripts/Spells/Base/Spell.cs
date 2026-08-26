@@ -758,7 +758,10 @@ namespace Server.Spells
 		public virtual bool BlockedByAnimalForm { get { return true; } }
 		public virtual bool BlocksMovement { get { return !m_MoveWhileCasting; } }
 		// Issue #45: SwingWhileCasting lets the weapon swing during a cast.
-		public virtual bool BlocksWeaponSwing { get { return !m_SwingWhileCasting; } }
+		// Only a player caster gets this: a fighter can cast without losing
+		// the attack. A BaseCreature caster still blocks the swing, so
+		// melee creatures that cast keep their old behaviour.
+		public virtual bool BlocksWeaponSwing { get { return !(m_SwingWhileCasting && m_Caster.Player); } }
 
 		public virtual bool CheckNextSpellTime { get { return !(m_Scroll is BaseWand); } }
 
