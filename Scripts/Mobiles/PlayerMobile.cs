@@ -2087,6 +2087,12 @@ namespace Server.Mobiles
 				MovementImpl.IgnoreMovableImpassables = true;
 			}
 
+			// Keeps a water-capable mount's graphic in sync with the tile one step
+			// ahead of every direction request (turns included), since the classic
+			// client refuses to send the move packet unless that graphic already
+			// matches. See WaterMountGraphics for the full explanation.
+			WaterMountGraphics.UpdateForMove(this, d);
+
 			res = base.Move(d);
 
 			MovementImpl.IgnoreMovableImpassables = false;

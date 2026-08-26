@@ -25,6 +25,7 @@ namespace Server.Mobiles
         private static readonly int MountRange = Math.Max(0, Config.Get("General.MountRange", 3));
         private Mobile m_Rider;
         private bool m_GrantedSwim;
+        private int m_LandItemID;
 
         public BaseMount(string name, int bodyID, int itemID, AIType aiType, FightMode fightMode, int rangePerception, int rangeFight, double activeSpeed, double passiveSpeed)
             : base(aiType, fightMode, rangePerception, rangeFight, activeSpeed, passiveSpeed)
@@ -100,6 +101,38 @@ namespace Server.Mobiles
             }
         }
 
+        // The graphic the classic client requires to allow a step onto a wet tile.
+        // A subclass may override this for a mount with its own water form.
+        public virtual int WaterMountItemID
+        {
+            get
+            {
+                return 0x3EB3;
+            }
+        }
+
+        // Swaps the mount's visible graphic between its land form and its water
+        // form. Called on every direction request, so it must not touch InternalItem
+        // when the requested graphic is already showing.
+        public void SetWaterGraphic(bool wet)
+        {
+            if (InternalItem == null)
+                return;
+
+            if (wet)
+            {
+                if (m_LandItemID == 0)
+                    m_LandItemID = InternalItem.ItemID;
+
+                if (InternalItem.ItemID != WaterMountItemID)
+                    InternalItem.ItemID = WaterMountItemID;
+            }
+            else if (m_LandItemID != 0 && InternalItem.ItemID != m_LandItemID)
+            {
+                InternalItem.ItemID = m_LandItemID;
+            }
+        }
+
         [CommandProperty(AccessLevel.GameMaster)]
         public Mobile Rider
         {
@@ -132,6 +165,10 @@ namespace Server.Mobiles
                         {
                             ns.Send(new PetWindow((PlayerMobile)m_Rider, this));
                         }
+
+                        // A mount standing in the world must never keep the water
+                        // graphic from its last rider.
+                        SetWaterGraphic(false);
 
                         if (InternalItem != null)
                             InternalItem.Internalize();
@@ -183,6 +220,11 @@ namespace Server.Mobiles
 
                         WaterWalkManager.Update(value);
                     }
+
+                    // A rider who mounts while already standing on water must see the
+                    // water graphic immediately, not only after the next step.
+                    if (value != null)
+                        WaterMountGraphics.UpdateForMount(value, this);
                 }
             }
         }
@@ -468,7 +510,9 @@ namespace Server.Mobiles
         {
             base.Serialize(writer);
 
-            writer.Write((int)2); // version
+            writer.Write((int)3); // version
+
+            writer.Write(m_LandItemID);
 
             writer.Write(m_GrantedSwim);
 
@@ -527,6 +571,11 @@ namespace Server.Mobiles
 
             switch ( version )
             {
+                case 3:
+                    {
+                        m_LandItemID = reader.ReadInt();
+                        goto case 2;
+                    }
                 case 2:
                     {
                         m_GrantedSwim = reader.ReadBool();
