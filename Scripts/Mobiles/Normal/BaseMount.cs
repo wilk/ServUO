@@ -138,7 +138,17 @@ namespace Server.Mobiles
                         if (m_GrantedSwim)
                         {
                             m_Rider.CanSwim = false;
-                            m_GrantedSwim = false;
+
+                            if (m_Rider.Map != null && m_Rider.Map != Map.Internal &&
+                                !m_Rider.Map.CanFit(m_Rider.X, m_Rider.Y, m_Rider.Z, 16, false, false, true, m_Rider))
+                            {
+                                // Revoking swim here would strand the rider over deep water; keep the grant until they reach dry ground.
+                                m_Rider.CanSwim = true;
+                            }
+                            else
+                            {
+                                m_GrantedSwim = false;
+                            }
                         }
                     }
                     else

@@ -1,3 +1,4 @@
+using Server.Mobiles;
 using Server.Targeting;
 
 namespace Server.Commands
@@ -35,6 +36,15 @@ namespace Server.Commands
                 var mobile = (Mobile)targeted;
 
                 mobile.CanSwim = !mobile.CanSwim;
+
+                var mount = mobile.Mount as BaseMount;
+
+                if (mount != null && mount.GrantedSwim)
+                {
+                    // The GM override replaces the mount's own swim grant, so the
+                    // mount must not revert CanSwim again when the rider dismounts.
+                    mount.GrantedSwim = false;
+                }
 
                 if (mobile.CanSwim)
                     from.SendMessage("{0} can now walk on water.", mobile.Name);
