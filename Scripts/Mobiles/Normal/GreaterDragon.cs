@@ -150,13 +150,25 @@ namespace Server.Mobiles
         public override void Serialize(GenericWriter writer)
         {
             base.Serialize(writer);
-            writer.Write((int)0);
+            writer.Write((int)2);
         }
 
         public override void Deserialize(GenericReader reader)
         {
             base.Deserialize(reader);
             int version = reader.ReadInt();
+
+            switch (version)
+            {
+                case 2:
+                    break;
+                case 1:
+                    reader.ReadMobile(); // legacy rider, from the removed mount ability
+                    reader.ReadItem(); // legacy mount item, from the removed mount ability
+                    goto case 0;
+                case 0:
+                    break;
+            }
         }
     }
 }

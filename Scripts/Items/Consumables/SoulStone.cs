@@ -511,10 +511,10 @@ namespace Server.Items
                                 bc.ControlTarget = null;
                                 bc.ControlOrder = OrderType.None;
 
-                                if (bc is BaseMount && ((BaseMount)bc).Rider == from)
+                                if (bc is IMount && ((IMount)bc).Rider == from)
                                 {
                                     from.SendLocalizedMessage(1042317); // You may not ride at this time
-                                    ((BaseMount)bc).Rider = null;
+                                    ((IMount)bc).Rider = null;
                                 }
                             }
                         }

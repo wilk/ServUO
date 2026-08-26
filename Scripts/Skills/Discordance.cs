@@ -99,9 +99,9 @@ namespace Server.SkillHandlers
                     int maxRange = BaseInstrument.GetBardRange(from, SkillName.Discordance);
                     Map targetMap = targ.Map;
 
-                    if (targ is BaseMount && ((BaseMount)targ).Rider != null)
+                    if (targ is IMount && ((IMount)targ).Rider != null)
                     {
-                        Mobile rider = ((BaseMount)targ).Rider;
+                        Mobile rider = ((IMount)targ).Rider;
 
                         range = (int)rider.GetDistanceToSqrt(from);
                         targetMap = rider.Map;

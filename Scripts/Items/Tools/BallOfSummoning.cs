@@ -199,7 +199,7 @@ namespace Server.Items
             {
                 this.SendLocalizedMessageTo(from, 1054122); // The Crystal Ball darkens. It must be charged before it can be used again.
             }
-            else if (pet is BaseMount && ((BaseMount)pet).Rider == from)
+            else if (pet is IMount && ((IMount)pet).Rider == from)
             {
                 MessageHelper.SendLocalizedMessageTo(this, from, 1054124, 0x36); // The Crystal Ball fills with a yellow mist. Why would you summon your pet while riding it?
             }

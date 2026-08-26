@@ -120,7 +120,7 @@ namespace Server.Mobiles
         public override void Serialize(GenericWriter writer)
         {
             base.Serialize(writer);
-            writer.Write(2);
+            writer.Write(4);
             writer.Write(GatheredFur);
         }
 
@@ -134,6 +134,16 @@ namespace Server.Mobiles
             else
             {
                 GatheredFur = reader.ReadBool();
+            }
+
+            switch (version)
+            {
+                case 4:
+                    break;
+                case 3:
+                    reader.ReadMobile(); // legacy rider, from the removed mount ability
+                    reader.ReadItem(); // legacy mount item, from the removed mount ability
+                    break;
             }
         }
     }

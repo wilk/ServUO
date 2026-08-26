@@ -268,7 +268,7 @@ namespace Server.Mobiles
             return GetMountPrevention(mob, null);
         }
 
-        public static BlockMountType GetMountPrevention(Mobile mob, BaseMount mount)
+        public static BlockMountType GetMountPrevention(Mobile mob, IMount mount)
         {
             if (mob == null)
                 return BlockMountType.None;
@@ -304,7 +304,7 @@ namespace Server.Mobiles
             return CheckMountAllowed(mob, null, message, flying);
         }
 
-        public static bool CheckMountAllowed(Mobile mob, BaseMount mount, bool message, bool flying)
+        public static bool CheckMountAllowed(Mobile mob, IMount mount, bool message, bool flying)
         {
             BlockMountType type = GetMountPrevention(mob, mount);
 
@@ -563,7 +563,7 @@ namespace Server.Mobiles
                 m_Expiration = expiration;
             }
 
-            public bool IsExpired(BaseMount mount)
+            public bool IsExpired(IMount mount)
             {
                 if (m_Type >= BlockMountType.RidingSwipe)
                 {
