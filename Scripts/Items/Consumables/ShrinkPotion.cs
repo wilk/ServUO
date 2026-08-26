@@ -92,7 +92,9 @@ namespace Server.Items
                     return;
                 }
 
-                var item = Shrink.DoShrink(from, creature);
+                Point3D location;
+                Map map;
+                var item = Shrink.DoShrink(from, creature, out location, out map);
 
                 from.AddToBackpack(item);
 

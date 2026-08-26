@@ -83,9 +83,14 @@ namespace Server.Commands
 
         // The success body of a shrink. Builds the statuette and internalizes creature, but
         // leaves placement to the caller: the command drops it on the ground, the potion
-        // puts it in the drinker's backpack.
-        public static ShrunkenCreature DoShrink(Mobile from, BaseCreature creature)
+        // puts it in the drinker's backpack. location and map carry where the creature
+        // stood before Internalize() moved it to the internal map, for a caller that
+        // places the statuette on the ground.
+        public static ShrunkenCreature DoShrink(Mobile from, BaseCreature creature, out Point3D location, out Map map)
         {
+            location = creature.Location;
+            map = creature.Map;
+
             var item = new ShrunkenCreature(creature);
 
             // Clear the orders first, or the creature keeps the old target when it
@@ -170,9 +175,11 @@ namespace Server.Commands
 
                 var creature = (BaseCreature)targeted;
 
-                var item = DoShrink(from, creature);
+                Point3D location;
+                Map map;
+                var item = DoShrink(from, creature, out location, out map);
 
-                item.MoveToWorld(creature.Location, creature.Map);
+                item.MoveToWorld(location, map);
 
                 from.SendMessage("The creature has been shrunk.");
             }
