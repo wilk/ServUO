@@ -1,3 +1,4 @@
+using Server.Items;
 using Server.Mobiles;
 using Server.Targeting;
 
@@ -36,6 +37,8 @@ namespace Server.Commands
                 var mobile = (Mobile)targeted;
 
                 mobile.CanSwim = !mobile.CanSwim;
+
+                WaterWalkManager.Update(mobile);
 
                 var mount = mobile.Mount as BaseMount;
 

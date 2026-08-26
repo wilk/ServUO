@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Server.Network;
 
 namespace Server.Items
 {
@@ -59,12 +60,32 @@ namespace Server.Items
             TearDown(e.Mobile);
         }
 
+        /// <summary>
+        /// Immediate entry point for the moment a mobile gains or loses CanSwim
+        /// without moving -- mounting a water-walking mount while standing still,
+        /// or [waterwalk toggling the ability directly. Waiting for the periodic
+        /// Sweep would leave the client's first step blocked, since a blocked step
+        /// never sends a Movement event to bootstrap the ring.
+        /// </summary>
+        public static void Update(Mobile m)
+        {
+            UpdateRing(m);
+        }
+
         private static void Sweep()
         {
-            if (m_Pools.Count == 0)
-                return;
+            // Connected players are the only mobiles that can ever need a pool
+            // created, so scan them to catch one gaining CanSwim while standing
+            // still (no Movement event fires in that case). Pools that already
+            // exist are refreshed too, so one is torn down properly on logout or
+            // loss of CanSwim even if the mobile is no longer connected.
+            var mobiles = new HashSet<Mobile>(m_Pools.Keys);
 
-            var mobiles = new List<Mobile>(m_Pools.Keys);
+            foreach (NetState ns in NetState.Instances)
+            {
+                if (ns.Mobile != null)
+                    mobiles.Add(ns.Mobile);
+            }
 
             foreach (Mobile m in mobiles)
                 UpdateRing(m);

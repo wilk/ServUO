@@ -180,6 +180,8 @@ namespace Server.Mobiles
                     {
                         value.CanSwim = true;
                         m_GrantedSwim = true;
+
+                        WaterWalkManager.Update(value);
                     }
                 }
             }
