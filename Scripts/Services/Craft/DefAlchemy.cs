@@ -298,6 +298,12 @@ namespace Server.Engines.Craft
                 AddRes(index, typeof(Ginseng), 1044356, 3, 1044364);
             }
 
+            index = AddCraft(typeof(ShrinkPotion), 1116353, "Shrink Potion", 90.0, 100.0, typeof(Bottle), 1044529, 1, 500315);
+            AddRes(index, typeof(BatWing), 1023960, 10, 1044253);
+            AddRes(index, typeof(DaemonBone), 1023968, 5, 1044253);
+            AddRes(index, typeof(NoxCrystal), 1023982, 5, 1044253);
+            AddRes(index, typeof(MandrakeRoot), 1044357, 10, 1044365);
+
             if (Core.ML)
             {
                 index = AddCraft(typeof(HoveringWisp), 1116353, 1072881, 75.0, 125.0, typeof(CapturedEssence), 1032686, 4, 1044253);
