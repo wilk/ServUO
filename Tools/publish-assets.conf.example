@@ -1,0 +1,27 @@
+# Copy this file to Tools/publish-assets.conf (gitignored) and fill in
+# real values. Never commit the real file - it names an ssh key path and
+# the VPS user/address.
+
+# SSH user + address for the VPS, e.g. shard@<SHARD_IP>
+REMOTE_USER="shard"
+REMOTE_HOST="<SHARD_IP>"
+
+# Absolute path to the private ssh key used to reach the VPS.
+SSH_KEY_PATH="$HOME/.ssh/id_shard_vps"
+
+# Absolute path to the web root nginx serves on the VPS (see Docs/PatchServer.md).
+REMOTE_WEB_ROOT="/srv/shard-patch"
+
+# Public address players' launchers fetch from. Must match nginx's listen port.
+PATCH_SERVICE_URL="http://<SHARD_IP>:<PATCH_PORT>/"
+
+# Where players download the launcher .exe itself.
+LAUNCHER_DOWNLOAD_URL="http://<SHARD_IP>:<PATCH_PORT>/ShardLauncher.exe"
+
+# Manifest version + minimum launcher version to stamp into this publish.
+MANIFEST_VERSION=1
+MIN_LAUNCHER_VERSION=1
+
+# Path to the ECDSA P-256 private signing key (see Tools/PatchBuilder/README
+# or Docs/PatchServer.md for how to generate one). Never commit the real key.
+SIGNING_KEY_PATH="Tools/PatchBuilder/signing-key.json"

@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>ShardPlugin</RootNamespace>
+    <AssemblyName>ShardPlugin</AssemblyName>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+
+    <!--
+      cuoapi.dll is the ClassicUO plugin API assembly. It is NOT vendored
+      into this repo - it ships inside a ClassicUO install. Point CuoApiPath
+      at your own local copy, either on the command line
+      (-p:CuoApiPath=...) or in a local, gitignored
+      Plugin/CuoApi.local.props (see CuoApi.local.props.example).
+      Default below matches this shard's documented dev machine path; see
+      Plugin/README.md.
+    -->
+    <CuoApiPath Condition="'$(CuoApiPath)' == ''">/mnt/c/Programmi UO/ClassicUOLauncher-win-x64-release/ClassicUO/cuoapi.dll</CuoApiPath>
+  </PropertyGroup>
+
+  <Import Project="CuoApi.local.props" Condition="Exists('CuoApi.local.props')" />
+
+  <ItemGroup Condition="Exists('$(CuoApiPath)')">
+    <Reference Include="CUO_API">
+      <HintPath>$(CuoApiPath)</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <Target Name="CheckCuoApiPath" BeforeTargets="BeforeBuild">
+    <Error
+      Condition="!Exists('$(CuoApiPath)')"
+      Text="cuoapi.dll not found at '$(CuoApiPath)'. Set CuoApiPath (see Plugin/README.md) to your local ClassicUO install's cuoapi.dll." />
+  </Target>
+
+</Project>
