@@ -46,3 +46,19 @@
 
 # Git worktrees for feature branches
 /.worktrees/
+
+# Issue #51: client delivery (launcher + patch service)
+!/Tools/publish-assets.sh
+!/Docs/
+!/Docs/PatchServer.md
+/Tools/PatchBuilder/bin
+/Tools/PatchBuilder/obj
+/Tools/PatchBuilder/signing-key.json
+/Tools/publish-assets.conf
+/Launcher/bin
+/Launcher/obj
+/Launcher/ShardConfig.local.json
+/Plugin/bin
+/Plugin/obj
+/Plugin/CuoApi.local.props
+/publish/

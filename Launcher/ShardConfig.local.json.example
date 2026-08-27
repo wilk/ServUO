@@ -1,0 +1,4 @@
+{
+  "patchServiceBaseUrl": "http://<SHARD_IP>:<PATCH_PORT>/",
+  "gameServerIp": "<SHARD_IP>"
+}

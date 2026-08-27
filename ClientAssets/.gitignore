@@ -1,0 +1,22 @@
+# ClientAssets/ never holds an original Ultima Online client file.
+# Block known stock-client file types and names anywhere in this folder,
+# then allowlist specific shard-made files by exact relative path.
+# See README.md for the rule this enforces.
+
+*.uop
+*.mul
+*.idx
+*.dll
+*.pdb
+*.exe
+client.exe
+
+# Allowlist: add one line per shard-made file that legitimately carries a
+# stock file name or extension. Nothing else under overrides/, cuo-data/
+# or plugins/ can be tracked until it is listed here explicitly.
+# Example (uncomment when the shard actually ships a hues.mul override):
+# !/overrides/hues.mul
+
+!.gitkeep
+!README.md
+!.gitignore

@@ -1,0 +1,52 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Launcher</RootNamespace>
+    <AssemblyName>ShardLauncher</AssemblyName>
+    <InvariantGlobalization>true</InvariantGlobalization>
+
+    <!--
+      A net10.0-windows WinForms project needs this to build outside of
+      Windows (e.g. from WSL). Kept here so a plain `dotnet build` /
+      `dotnet publish` works without needing -p:EnableWindowsTargeting=true
+      on the command line.
+    -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      Embedded (not CopyToOutputDirectory) so publickey.json is baked into
+      ShardLauncher.exe by PublishSingleFile. A player only needs the one
+      .exe; ManifestVerifier reads the key back out via
+      Assembly.GetManifestResourceStream instead of a loose file on disk.
+    -->
+    <EmbeddedResource Include="publickey.json" LogicalName="Launcher.publickey.json" />
+
+    <!--
+      ShardConfig.local.json carries the real shard address (IP + patch
+      service port). It is gitignored - the repo only tracks
+      ShardConfig.local.json.example. Embedded the same way as
+      publickey.json, so the built .exe still needs no loose file next to
+      it. AppConstants reads it back via GetManifestResourceStream and
+      falls back to an obvious placeholder if it is missing (belt and
+      suspenders alongside the EnsureShardConfig build check below).
+    -->
+    <EmbeddedResource Include="ShardConfig.local.json" LogicalName="Launcher.ShardConfig.local.json" Condition="Exists('ShardConfig.local.json')" />
+  </ItemGroup>
+
+  <!--
+    Fail the build with a clear message if ShardConfig.local.json was never
+    created, instead of silently shipping a launcher with no shard address.
+  -->
+  <Target Name="EnsureShardConfig" BeforeTargets="CoreCompile">
+    <Error Condition="!Exists('ShardConfig.local.json')"
+           Text="Launcher/ShardConfig.local.json is missing. Copy Launcher/ShardConfig.local.json.example to Launcher/ShardConfig.local.json and fill in the real shard address before building." />
+  </Target>
+
+</Project>

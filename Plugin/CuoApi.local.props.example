@@ -1,0 +1,10 @@
+<!--
+  Copy this file to Plugin/CuoApi.local.props (gitignored) if your
+  cuoapi.dll lives somewhere other than the default path baked into
+  Plugin.csproj.
+-->
+<Project>
+  <PropertyGroup>
+    <CuoApiPath>C:\Path\To\Your\ClassicUO\cuoapi.dll</CuoApiPath>
+  </PropertyGroup>
+</Project>
