@@ -5,7 +5,7 @@ original Ultima Online client file.
 
 PatchBuilder (see `Tools/PatchBuilder/`) walks this folder, hashes every
 file with SHA-256, and writes `manifest.json` for the launcher to read.
-The three subfolders map to the three delivery targets in the manifest.
+The four subfolders map to the four delivery targets in the manifest.
 
 ## overrides/
 
@@ -35,6 +35,21 @@ copies these into ClassicUO's `Data/Plugins/` folder and starts
 ClassicUO with `-plugins <path>`.
 
 Maps to manifest `target: "plugin"`.
+
+## client/
+
+The shard's own ClassicUO build: `ClassicUO.exe`, `cuo.dll`, and the
+other files that build produces, plus the ClassicUO `LICENSE.md`.
+`Tools/publish-assets.sh` stages this folder from the client build
+output before PatchBuilder runs; see that script and
+`Docs/ShardOwnerGuide.md`.
+
+The launcher installs this whole folder into its own
+`%LOCALAPPDATA%\ServUOShard\client\` and starts `ClassicUO.exe` from
+there. It never writes into a folder the player owns. The player never
+installs ClassicUO and never picks its folder.
+
+Maps to manifest `target: "client"`.
 
 ## What must never go here
 

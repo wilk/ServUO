@@ -102,15 +102,15 @@ internal sealed class AssetUpdater(LauncherSettings settings, Action<string> log
                     break;
 
                 case "cuoData":
-                    CopyIntoClassicUo(cachedPath, "Data", "Client", Path.GetFileName(file.Path));
+                    CopyIntoClientDirectory(cachedPath, "Data", "Client", Path.GetFileName(file.Path));
                     break;
 
                 case "plugin":
-                    CopyIntoClassicUo(cachedPath, "Data", "Plugins", Path.GetFileName(file.Path));
+                    CopyIntoClientDirectory(cachedPath, "Data", "Plugins", Path.GetFileName(file.Path));
                     break;
 
                 case "client":
-                    // Reserved for future use; ClientAssets/ ships no "client" target today.
+                    InstallClientFile(cachedPath, file.Path);
                     break;
             }
         }
@@ -315,16 +315,31 @@ internal sealed class AssetUpdater(LauncherSettings settings, Action<string> log
         }
     }
 
-    private void CopyIntoClassicUo(string sourcePath, params string[] relativeParts)
+    private static void CopyIntoClientDirectory(string sourcePath, params string[] relativeParts)
     {
-        if (string.IsNullOrWhiteSpace(settings.ClassicUoPath))
-        {
-            throw new UpdateException("ClassicUO installation folder is not set.");
-        }
-
-        string destinationDir = Path.Combine([settings.ClassicUoPath, .. relativeParts[..^1]]);
+        string destinationDir = Path.Combine([LauncherSettings.ClientDirectory, .. relativeParts[..^1]]);
         Directory.CreateDirectory(destinationDir);
         string destinationPath = Path.Combine(destinationDir, relativeParts[^1]);
+        File.Copy(sourcePath, destinationPath, overwrite: true);
+    }
+
+    /// <summary>
+    /// Copies a manifest "client" file into the launcher's own client
+    /// folder, keeping the path structure below "client/" (for example
+    /// manifest path "client/x64/cuo.dll" lands at
+    /// LauncherSettings.ClientDirectory/x64/cuo.dll). Reuses the same
+    /// ResolveSafePath guard the asset cache uses, so a manifest entry
+    /// cannot escape the destination folder.
+    /// </summary>
+    private static void InstallClientFile(string sourcePath, string manifestPath)
+    {
+        const string clientPrefix = "client/";
+        string subPath = manifestPath.StartsWith(clientPrefix, StringComparison.OrdinalIgnoreCase)
+            ? manifestPath[clientPrefix.Length..]
+            : manifestPath;
+
+        string destinationPath = ResolveSafePath(LauncherSettings.ClientDirectory, subPath);
+        Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);
         File.Copy(sourcePath, destinationPath, overwrite: true);
     }
 }

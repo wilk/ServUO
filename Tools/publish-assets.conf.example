@@ -15,8 +15,8 @@ REMOTE_WEB_ROOT="/srv/shard-patch"
 # Public address players' launchers fetch from. Must match nginx's listen port.
 PATCH_SERVICE_URL="http://<SHARD_IP>:<PATCH_PORT>/"
 
-# Where players download the launcher .exe itself.
-LAUNCHER_DOWNLOAD_URL="http://<SHARD_IP>:<PATCH_PORT>/ShardLauncher.exe"
+# Where players download the patcher .exe itself.
+LAUNCHER_DOWNLOAD_URL="http://<SHARD_IP>:<PATCH_PORT>/ShardPatcher.exe"
 
 # Manifest version + minimum launcher version to stamp into this publish.
 MANIFEST_VERSION=1
@@ -25,3 +25,15 @@ MIN_LAUNCHER_VERSION=1
 # Path to the ECDSA P-256 private signing key (see Tools/PatchBuilder/README
 # or Docs/PatchServer.md for how to generate one). Never commit the real key.
 SIGNING_KEY_PATH="Tools/PatchBuilder/signing-key.json"
+
+# Absolute path to the shard's ClassicUO build output (from github.com/wilk/ClassicUO,
+# branch shard/main, built with scripts/build-naot.sh - see "Building the client"
+# in Docs/ShardOwnerGuide.md). Must hold ClassicUO.exe, cuo.dll and LICENSE.md.
+# The script copies this folder's files (except *.pdb) into ClientAssets/client/,
+# and that folder is published to a public web server that every player reaches
+# over plain HTTP. Anything readable from CLIENT_BUILD_DIR becomes public.
+#
+# Point this at the build's own output folder (bin/dist), never at a repository
+# checkout. A checkout holds .git, local configs, and can hold a private key -
+# none of that belongs on a public server.
+CLIENT_BUILD_DIR="/path/to/ClassicUO/build/output"
