@@ -140,7 +140,24 @@ namespace Server.Mobiles
 
                         if (m_GrantedSwim)
                         {
-                            m_Rider.CanSwim = false;
+                            PlayerMobile pm = m_Rider as PlayerMobile;
+
+                            if (pm != null)
+                            {
+                                // Do not strip CanSwim here: a rider knocked off, or whose
+                                // mount dies, may be standing over deep water right now.
+                                // Hand the grant to the rider as pending; it clears on the
+                                // rider's first step onto a tile that is not water. See
+                                // CheckSwimGrant, called from PlayerMobile.OnLocationChange.
+                                pm.MountSwimGrant = true;
+                            }
+                            else
+                            {
+                                // Only players carry the pending-grant tracking; anything
+                                // else keeps the old immediate-clear behaviour.
+                                m_Rider.CanSwim = false;
+                            }
+
                             m_GrantedSwim = false;
                         }
 
@@ -198,6 +215,44 @@ namespace Server.Mobiles
             }
 
             return onpath;
+        }
+
+        // Clears a pending mount-granted swim grant once the rider's current tile is
+        // not water. Call this after a Mobile's Location has already been updated.
+        // Only players carry this pending-grant flag.
+        public static void CheckSwimGrant(PlayerMobile m)
+        {
+            if (m == null || !m.MountSwimGrant)
+                return;
+
+            if (!m.CanSwim || IsWaterTile(m.Map, m.X, m.Y, m.Z))
+                return;
+
+            m.CanSwim = false;
+            m.MountSwimGrant = false;
+        }
+
+        private static bool IsWaterTile(Map map, int x, int y, int z)
+        {
+            if (map == null || map == Map.Internal)
+                return false;
+
+            LandTile landTile = map.Tiles.GetLandTile(x, y);
+
+            if (landTile.Z == z && (TileData.LandTable[landTile.ID & TileData.MaxLandValue].Flags & TileFlag.Wet) != 0)
+                return true;
+
+            StaticTile[] staticTiles = map.Tiles.GetStaticTiles(x, y, true);
+
+            for (int i = 0; i < staticTiles.Length; ++i)
+            {
+                StaticTile tile = staticTiles[i];
+
+                if (tile.Z == z && (TileData.ItemTable[tile.ID & TileData.MaxItemValue].Flags & TileFlag.Wet) != 0)
+                    return true;
+            }
+
+            return false;
         }
 
         public static void Dismount(Mobile dismounted)
