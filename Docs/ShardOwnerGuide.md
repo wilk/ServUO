@@ -148,6 +148,17 @@ checks on launch), it downloads the new manifest, verifies its
 signature, downloads any changed file, verifies each file's SHA-256,
 and applies it automatically.
 
+## Players who ask about the ClassicUO launcher
+
+Some players prefer to start the game from the third-party ClassicUO
+launcher, for its profiles and saved accounts. Point them at "Using
+the third-party ClassicUO launcher" in `Docs/PlayerGuide.md`. It
+covers the folder their profile needs and the update rule.
+
+Do not repeat the folder, port, or client version here. They come from
+`Launcher/AppConstants.cs`, and a copy here would drift out of sync
+with the code.
+
 ## Raising MIN_LAUNCHER_VERSION
 
 Raise `MIN_LAUNCHER_VERSION` in `Tools/publish-assets.conf` only when

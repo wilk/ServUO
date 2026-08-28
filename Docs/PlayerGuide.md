@@ -84,6 +84,44 @@ The **Play** button re-runs the same update-and-start sequence. Use it
 to try again after fixing a problem (for example, after Windows
 SmartScreen or after freeing up disk space).
 
+## Using the third-party ClassicUO launcher
+
+You do not have to use the patcher's own **Play** button. Some players
+prefer the third-party ClassicUO launcher instead, for its profiles,
+saved accounts, and autologin.
+
+### Create a profile
+
+Add a profile in the ClassicUO launcher with these fields:
+
+| Field | Value |
+|---|---|
+| ClassicUO folder | `%LOCALAPPDATA%\ServUOShard\client` (`C:\Users\<your user>\AppData\Local\ServUOShard\client`) |
+| Ultima Online folder | the folder from "First time", step 1 |
+| Server address | ask shard staff for the current address |
+| Port | `2593` |
+| Client version | `7.0.108.0` |
+
+The **ClassicUO folder** field picks which client runs. The Ultima
+Online folder does not decide this. No plugin setting decides this
+either. A player who points it anywhere else lands on the wrong
+client, with no error message.
+
+The Ultima Online folder holds only the art and the maps. The
+ClassicUO folder holds the program. They are never the same folder.
+
+### The patcher still owns updates
+
+The ClassicUO launcher never checks the shard's patch service. It
+never downloads a shard file. Run `ShardPatcher.exe` first. It
+installs the client. Run `ShardPatcher.exe` again after every shard
+update.
+
+If the game misbehaves after a shard update, and you play through the
+ClassicUO launcher, your client has likely fallen behind the shard.
+Run `ShardPatcher.exe`. It restores every client file to match the
+shard, no matter which launcher starts the game.
+
 ## Error messages
 
 Every error message stops the patcher before it starts ClassicUO, and
@@ -136,3 +174,6 @@ folder. Files the shard delivers, and the ClassicUO client itself, go
 into `%LOCALAPPDATA%\ServUOShard\` instead. If you already have your
 own ClassicUO install elsewhere, the patcher never touches it either -
 it starts only its own copy, under `%LOCALAPPDATA%\ServUOShard\client\`.
+
+The Ultima Online folder holds the art and the maps. The client
+folder holds the program. They are never the same folder.
