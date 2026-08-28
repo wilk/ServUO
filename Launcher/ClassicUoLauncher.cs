@@ -14,11 +14,14 @@ internal static class ClassicUoLauncher
     /// </summary>
     public static void Start(LauncherSettings settings)
     {
-        string exePath = Path.Combine(settings.ClassicUoPath, "ClassicUO.exe");
+        string clientDir = LauncherSettings.ClientDirectory;
+        string exePath = Path.Combine(clientDir, "ClassicUO.exe");
 
         if (!File.Exists(exePath))
         {
-            throw new UpdateException($"ClassicUO.exe was not found at '{exePath}'.");
+            throw new UpdateException(
+                "The shard client is not installed yet. Run the launcher again while connected to " +
+                $"the internet so it can download it from {AppConstants.PatchServiceBaseUrl}.");
         }
 
         var args = new List<string>
@@ -35,7 +38,7 @@ internal static class ClassicUoLauncher
             args.Add(LauncherSettings.OverridesFilePath);
         }
 
-        string pluginsDir = Path.Combine(settings.ClassicUoPath, "Data", "Plugins");
+        string pluginsDir = Path.Combine(clientDir, "Data", "Plugins");
         if (Directory.Exists(pluginsDir))
         {
             string[] plugins = Directory.GetFiles(pluginsDir, "*.dll");
@@ -48,7 +51,7 @@ internal static class ClassicUoLauncher
 
         var startInfo = new ProcessStartInfo(exePath)
         {
-            WorkingDirectory = settings.ClassicUoPath,
+            WorkingDirectory = clientDir,
             UseShellExecute = false
         };
 

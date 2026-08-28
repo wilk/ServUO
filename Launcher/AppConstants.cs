@@ -17,7 +17,7 @@ internal static class AppConstants
     public const string ShardId = "ServUOShard";
 
     /// <summary>This launcher build's own version. Compared against manifest.json's minLauncherVersion.</summary>
-    public const int LauncherVersion = 1;
+    public const int LauncherVersion = 2;
 
     /// <summary>
     /// Patch service base address. Plain HTTP - the shard has no DNS name.

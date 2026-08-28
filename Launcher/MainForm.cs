@@ -50,28 +50,11 @@ internal sealed class MainForm : Form
                 "That folder does not contain client.exe. Pick the folder with your Ultima Online installation.");
         }
 
-        if (!IsValidClassicUoPath(_settings.ClassicUoPath))
-        {
-            _settings.ClassicUoPath = PromptForFolder(
-                "Select your ClassicUO installation folder (the folder containing ClassicUO.exe).",
-                GetDefaultClassicUoPath(),
-                IsValidClassicUoPath,
-                "That folder does not contain ClassicUO.exe. Pick the folder with your ClassicUO installation.");
-        }
-
         _settings.Save();
     }
 
     private static bool IsValidUoPath(string? path) =>
         !string.IsNullOrWhiteSpace(path) && File.Exists(Path.Combine(path, "client.exe"));
-
-    private static bool IsValidClassicUoPath(string? path) =>
-        !string.IsNullOrWhiteSpace(path) && File.Exists(Path.Combine(path, "ClassicUO.exe"));
-
-    private static string GetDefaultClassicUoPath() =>
-        Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
-            "ClassicUO");
 
     private string PromptForFolder(string description, string initialPath, Func<string, bool> isValid, string invalidMessage)
     {

@@ -33,7 +33,8 @@ fi
 source "$CONF_PATH"
 
 for var in REMOTE_USER REMOTE_HOST SSH_KEY_PATH REMOTE_WEB_ROOT PATCH_SERVICE_URL \
-           LAUNCHER_DOWNLOAD_URL MANIFEST_VERSION MIN_LAUNCHER_VERSION SIGNING_KEY_PATH; do
+           LAUNCHER_DOWNLOAD_URL MANIFEST_VERSION MIN_LAUNCHER_VERSION SIGNING_KEY_PATH \
+           CLIENT_BUILD_DIR; do
     if [[ -z "${!var:-}" ]]; then
         echo "error: $var is not set in $CONF_PATH" >&2
         exit 1
@@ -65,6 +66,30 @@ fi
 echo "==> Staging plugin into ClientAssets/plugins/"
 mkdir -p "$REPO_ROOT/ClientAssets/plugins"
 cp -f "$PLUGIN_DLL" "$REPO_ROOT/ClientAssets/plugins/ShardPlugin.dll"
+
+if [[ ! -f "$CLIENT_BUILD_DIR/ClassicUO.exe" ]]; then
+    echo "error: CLIENT_BUILD_DIR ($CLIENT_BUILD_DIR) holds no ClassicUO.exe" >&2
+    exit 1
+fi
+
+if [[ ! -f "$CLIENT_BUILD_DIR/cuo.dll" ]]; then
+    echo "error: CLIENT_BUILD_DIR ($CLIENT_BUILD_DIR) holds no cuo.dll" >&2
+    exit 1
+fi
+
+if [[ ! -f "$CLIENT_BUILD_DIR/LICENSE.md" ]]; then
+    echo "error: CLIENT_BUILD_DIR ($CLIENT_BUILD_DIR) holds no LICENSE.md - the ClassicUO fork's" >&2
+    echo "BSD 2-Clause notice must ship with the binaries. Copy it there from the client repo." >&2
+    exit 1
+fi
+
+echo "==> Staging client build into ClientAssets/client/ (skipping *.pdb, pruning removed files)"
+mkdir -p "$REPO_ROOT/ClientAssets/client"
+rsync -a --delete \
+    --exclude='*.pdb' \
+    --exclude='.gitkeep' --exclude='.gitignore' --exclude='README.md' --exclude='LICENSE.md' \
+    "$CLIENT_BUILD_DIR/" "$REPO_ROOT/ClientAssets/client/"
+cp -f "$CLIENT_BUILD_DIR/LICENSE.md" "$REPO_ROOT/ClientAssets/client/LICENSE.md"
 
 STAGING_DIR="$REPO_ROOT/publish"
 rm -rf "$STAGING_DIR"

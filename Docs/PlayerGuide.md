@@ -8,13 +8,14 @@ Do these steps once, in order.
 
 1. Install Ultima Online (the classic client). Note the install folder -
    it must contain `client.exe`.
-2. Install ClassicUO. Note its install folder - it must contain
-   `ClassicUO.exe`.
-3. Download `ShardLauncher.exe` from the shard's patch service. Ask
+2. Download `ShardLauncher.exe` from the shard's patch service. Ask
    shard staff for the download link if you do not have it. The
    launcher is a single file. You do not need any other file next to
    it.
-4. Run `ShardLauncher.exe`.
+3. Run `ShardLauncher.exe`.
+
+You do not install ClassicUO yourself. The launcher installs the
+shard's own ClassicUO build for you, the first time it runs.
 
 ### Windows SmartScreen
 
@@ -27,35 +28,35 @@ recognize the publisher.
 
 ### What the launcher asks on first run
 
-The launcher opens two folder pickers, in this order:
+The launcher opens one folder picker:
 
 1. "Select your Ultima Online installation folder (the folder
    containing client.exe)." Pick the folder from step 1 above.
-2. "Select your ClassicUO installation folder (the folder containing
-   ClassicUO.exe)." Pick the folder from step 2 above.
 
 If you pick a folder that does not contain the right file, the
 launcher shows a dialog titled **Invalid folder** and asks again:
 
 - "That folder does not contain client.exe. Pick the folder with your
   Ultima Online installation."
-- "That folder does not contain ClassicUO.exe. Pick the folder with
-  your ClassicUO installation."
 
-If you close a folder picker without choosing a folder, the launcher
+If you close the folder picker without choosing a folder, the launcher
 shows "A required folder was not selected. The launcher cannot
-continue." and stops. Run the launcher again and pick both folders to
+continue." and stops. Run the launcher again and pick the folder to
 continue.
 
-The launcher saves both folders. It does not ask again on later runs,
-unless the saved folder no longer contains the right file.
+The launcher saves the folder. It does not ask again on later runs,
+unless the saved folder no longer contains `client.exe`.
+
+After the folder picker, the launcher downloads its own ClassicUO
+build the same way it downloads any other shard file - see "Every time
+after" below. You never install ClassicUO and never pick its folder.
 
 ## Every time after
 
 1. Run `ShardLauncher.exe`.
 2. The launcher checks the patch service for updates, downloads
-   anything changed, and verifies it. This is automatic - you do not
-   press anything.
+   anything changed (including its own ClassicUO build, on first run),
+   and verifies it. This is automatic - you do not press anything.
 3. The launcher starts ClassicUO for you.
 
 A normal run shows a short log:
@@ -69,7 +70,9 @@ ClassicUO started.
 
 If the shard published new files, you see "Downloading `<file>`
 (`<size>` bytes)..." lines before "Starting ClassicUO...". This is
-normal - wait for it to finish.
+normal - wait for it to finish. On your very first run, this includes
+the ClassicUO client itself (about 22 MB), so it takes longer than
+later runs.
 
 The **Play** button re-runs the same update-and-start sequence. Use it
 to try again after fixing a problem (for example, after Windows
@@ -78,8 +81,8 @@ SmartScreen or after freeing up disk space).
 ## Error messages
 
 Every error message stops the launcher before it starts ClassicUO, and
-appears in a dialog titled **Cannot start** (except the two folder
-picker errors above, which use their own dialogs).
+appears in a dialog titled **Cannot start** (except the folder picker
+errors above, which use their own dialogs).
 
 | Message | What it means | What to do |
 |---|---|---|
@@ -91,8 +94,7 @@ picker errors above, which use their own dialogs).
 | "The downloaded manifest is version `<n>`, but this launcher already applied version `<m>`. Refusing to roll back assets. This may mean the patch service is being tampered with; try again later or contact the shard's staff." | The patch service is offering older files than you already have, and the shard owner did not sign this as an authorized recovery. | Do not proceed. Contact shard staff. |
 | "Downloaded file `<path>` does not match its manifest hash." | A downloaded file got corrupted in transit. | Try again. If it keeps failing, contact shard staff. |
 | "Could not download `<path>`: ..." | The download failed partway (connection drop, disk full, permission problem). | Check your disk space and connection. Try again. |
-| "ClassicUO installation folder is not set." | Your saved ClassicUO folder setting is missing or empty. | Reset the launcher to a clean state (see below) and pick the folder again. |
-| "ClassicUO.exe was not found at `<path>`." | ClassicUO was moved, renamed, or uninstalled since you picked its folder. | Reinstall or move ClassicUO back, or reset the launcher (see below) to pick the folder again. |
+| "The shard client is not installed yet. Run the launcher again while connected to the internet so it can download it from `<url>`." | The launcher has not finished installing its own ClassicUO build yet, usually because an earlier run had no internet connection. | Check your connection and run the launcher again. |
 | "Unexpected error: ..." | An error the launcher did not expect. | Try again. If it keeps failing, contact shard staff with the exact message. |
 
 ## Where the launcher keeps its files
@@ -103,24 +105,28 @@ Everything the launcher owns lives under:
 %LOCALAPPDATA%\ServUOShard\
 ```
 
-- `settings.json` - your saved UO folder, ClassicUO folder, and the
-  last manifest version you applied.
+- `settings.json` - your saved UO folder and the last manifest version
+  you applied.
 - `assets\` - downloaded shard files, cached so they are not
   re-downloaded every run.
+- `client\` - the shard's own ClassicUO build: `ClassicUO.exe`,
+  `cuo.dll`, its `LICENSE.md`, and the `Data\Client\` and
+  `Data\Plugins\` subfolders the shard's files go into.
 - `uofilesoverride.txt` - the list ClassicUO reads to find shard-made
   override files.
 
 ### Resetting to a clean state
 
 Close the launcher, then delete the whole `%LOCALAPPDATA%\ServUOShard\`
-folder. The next launcher run asks for your UO and ClassicUO folders
-again, and re-downloads every shard file.
+folder. The next launcher run asks for your UO folder again, and
+re-downloads every shard file, including the ClassicUO client itself.
 
 ## The launcher never touches your Ultima Online install folder
 
 The launcher only reads `client.exe` from that folder, to confirm it
 is the right one, and passes the folder's path to ClassicUO. It never
 writes, copies, or deletes anything inside your Ultima Online install
-folder. Files the shard delivers go into `%LOCALAPPDATA%\ServUOShard\`
-and into your ClassicUO folder's `Data\Client\` and `Data\Plugins\`
-subfolders instead.
+folder. Files the shard delivers, and the ClassicUO client itself, go
+into `%LOCALAPPDATA%\ServUOShard\` instead. If you already have your
+own ClassicUO install elsewhere, the launcher never touches it either -
+it starts only its own copy, under `%LOCALAPPDATA%\ServUOShard\client\`.

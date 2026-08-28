@@ -25,3 +25,8 @@ MIN_LAUNCHER_VERSION=1
 # Path to the ECDSA P-256 private signing key (see Tools/PatchBuilder/README
 # or Docs/PatchServer.md for how to generate one). Never commit the real key.
 SIGNING_KEY_PATH="Tools/PatchBuilder/signing-key.json"
+
+# Absolute path to the shard's ClassicUO build output (from github.com/wilk/ClassicUO,
+# branch shard/main). Must hold ClassicUO.exe, cuo.dll and LICENSE.md. The script
+# copies this folder's files (except *.pdb) into ClientAssets/client/.
+CLIENT_BUILD_DIR="/path/to/ClassicUO/build/output"

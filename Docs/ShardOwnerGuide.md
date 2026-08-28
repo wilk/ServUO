@@ -52,6 +52,23 @@ In `Tools/publish-assets.conf`, set:
   `ShardLauncher.exe`.
 - `MANIFEST_VERSION`, `MIN_LAUNCHER_VERSION` - start both at `1`.
 - `SIGNING_KEY_PATH` - path to the private key from step 1.
+- `CLIENT_BUILD_DIR` - absolute path to the shard's ClassicUO build
+  output (see "Building the client" below).
+
+### 2a. Build the client
+
+The shard ships its own ClassicUO build, not a stock ClassicUO
+install. Build it from `github.com/wilk/ClassicUO`, branch
+`shard/main` - see that repo for the build command. The result must be
+one folder holding `ClassicUO.exe`, `cuo.dll`, and every other file the
+build produces.
+
+Copy that build's `LICENSE.md` (ClassicUO is BSD 2-Clause, and binary
+redistribution must carry the notice) into the same folder, then point
+`CLIENT_BUILD_DIR` in `Tools/publish-assets.conf` at it.
+`Tools/publish-assets.sh` refuses to publish, with a clear error, if
+`ClassicUO.exe`, `cuo.dll`, or `LICENSE.md` is missing from that
+folder.
 
 ### 3. Set up the VPS
 
@@ -65,9 +82,9 @@ firewall rule for the patch port.
 Tools/publish-assets.sh
 ```
 
-This builds the launcher and plugin, runs PatchBuilder, and uploads
-everything to the VPS. See "The publish loop" below for what it does
-in detail.
+This builds the launcher and plugin, stages the client build from
+`CLIENT_BUILD_DIR`, runs PatchBuilder, and uploads everything to the
+VPS. See "The publish loop" below for what it does in detail.
 
 ### 5. How the launcher reaches players
 
@@ -81,8 +98,10 @@ runs it, and it does the rest.
 The loop for a normal content update:
 
 1. Edit or add a file under `ClientAssets/` (`overrides/`, `cuo-data/`,
-   or `plugins/` - see `ClientAssets/README.md` for what each folder
-   means).
+   `plugins/`, or `client/` - see `ClientAssets/README.md` for what
+   each folder means). A new client build only needs `CLIENT_BUILD_DIR`
+   updated; `Tools/publish-assets.sh` re-stages `ClientAssets/client/`
+   from it on every run.
 2. Raise `MANIFEST_VERSION` in `Tools/publish-assets.conf` by at least
    1. The launcher rejects a manifest whose version is not higher than
       what it already applied, so this step is required, not optional.
@@ -169,6 +188,10 @@ dotnet run --project Tools/PatchBuilder -- verify --manifest <path> --sig <path>
   `.mul`, `.idx`, `.uop`, `client.exe`, or any `.dll`/`.pdb` that ships
   inside a stock client or ClassicUO install. `ClientAssets/.gitignore`
   blocks these by pattern; see `ClientAssets/README.md`.
+- The shard's own ClassicUO binaries under `ClientAssets/client/`
+  (`ClassicUO.exe`, `cuo.dll`, and the rest of the build). They stay
+  untracked, the same as `ShardPlugin.dll`. Only `client/LICENSE.md` is
+  tracked.
 
 ## Troubleshooting
 
@@ -178,6 +201,11 @@ dotnet run --project Tools/PatchBuilder -- verify --manifest <path> --sig <path>
   and fill it in.
 - **"error: `<VAR>` is not set in `<path>`/publish-assets.conf"** - One
   of the required config values is empty. Fill it in.
+- **"error: CLIENT_BUILD_DIR (`<path>`) holds no ClassicUO.exe"**, **"...
+  holds no cuo.dll"**, or **"... holds no LICENSE.md"** - `CLIENT_BUILD_DIR`
+  does not point at a complete ClassicUO build. Rebuild the client from
+  `github.com/wilk/ClassicUO`, branch `shard/main`, copy its `LICENSE.md`
+  into the same folder, and check the path.
 - **"error: launcher build did not produce `<path>`"** or **"error:
   plugin build did not produce `<path>`"** - The `dotnet publish` or
   `dotnet build` step failed before it reached PatchBuilder. Scroll up
@@ -188,8 +216,9 @@ dotnet run --project Tools/PatchBuilder -- verify --manifest <path> --sig <path>
   Tools/PatchBuilder -- --help`).
 - **"'`<path>`' is not under overrides/, cuo-data/, plugins/ or client/
   - don't know which manifest target it maps to."** - You added a file
-  directly under `ClientAssets/` instead of inside one of its three
-  subfolders. Move it into `overrides/`, `cuo-data/`, or `plugins/`.
+  directly under `ClientAssets/` instead of inside one of its four
+  subfolders. Move it into `overrides/`, `cuo-data/`, `plugins/`, or
+  `client/`.
 - **"assets directory not found: `<path>`"** - The `--assets` path you
   gave PatchBuilder does not exist. Check the path.
 - **"could not parse signing key file: `<path>`"** - `SIGNING_KEY_PATH`

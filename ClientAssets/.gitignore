@@ -17,6 +17,11 @@ client.exe
 # Example (uncomment when the shard actually ships a hues.mul override):
 # !/overrides/hues.mul
 
+# The BSD 2-Clause notice must ship with the client binaries. This is the
+# one file under client/ that is shard-tracked; ClassicUO.exe, cuo.dll and
+# every other client binary stay untracked, same as ShardPlugin.dll.
+!/client/LICENSE.md
+
 !.gitkeep
 !README.md
 !.gitignore
