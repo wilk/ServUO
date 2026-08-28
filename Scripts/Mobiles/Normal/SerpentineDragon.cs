@@ -72,10 +72,13 @@ namespace Server.Mobiles
             }
             set
             {
-                int itemID = MountableCreature.GetMountItemID(Body);
+                if (m_MountItem != null)
+                {
+                    int itemID = MountableCreature.GetMountItemID(Body);
 
-                if (itemID != 0)
-                    m_MountItem.ItemID = itemID;
+                    if (itemID != 0)
+                        m_MountItem.ItemID = itemID;
+                }
 
                 MountableCreature.SetRider(this, value, ref m_Rider, m_MountItem);
             }
