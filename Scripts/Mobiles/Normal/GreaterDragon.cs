@@ -4,8 +4,11 @@ using Server.Items;
 namespace Server.Mobiles
 {
     [CorpseName("a dragon corpse")]
-    public class GreaterDragon : BaseCreature
+    public class GreaterDragon : BaseCreature, IMount
     {
+        private Mobile m_Rider;
+        private Item m_MountItem;
+
         [Constructable]
         public GreaterDragon()
             : base(AIType.AI_Mage, FightMode.Closest, 10, 1, 0.3, 0.5)
@@ -13,6 +16,8 @@ namespace Server.Mobiles
             Name = "a greater dragon";
             Body = Utility.RandomList(12, 59);
             BaseSoundID = 362;
+
+            m_MountItem = new CreatureMountItem(this, MountableCreature.GetMountItemID(Body));
 
             SetStr(1025, 1425);
             SetDex(81, 148);
@@ -55,6 +60,57 @@ namespace Server.Mobiles
         public GreaterDragon(Serial serial)
             : base(serial)
         {
+        }
+
+        [CommandProperty(AccessLevel.GameMaster)]
+        public Mobile Rider
+        {
+            get
+            {
+                return m_Rider;
+            }
+            set
+            {
+                int itemID = MountableCreature.GetMountItemID(Body);
+
+                if (itemID != 0)
+                    m_MountItem.ItemID = itemID;
+
+                MountableCreature.SetRider(this, value, ref m_Rider, m_MountItem);
+            }
+        }
+
+        public void OnRiderDamaged(Mobile from, ref int amount, bool willKill)
+        {
+        }
+
+        public override void OnDoubleClick(Mobile from)
+        {
+            MountableCreature.TryMount(this, from);
+        }
+
+        public override bool OnBeforeDeath()
+        {
+            Rider = null;
+
+            return base.OnBeforeDeath();
+        }
+
+        public override void OnDelete()
+        {
+            Rider = null;
+
+            base.OnDelete();
+        }
+
+        public override void OnAfterDelete()
+        {
+            if (m_MountItem != null)
+                m_MountItem.Delete();
+
+            m_MountItem = null;
+
+            base.OnAfterDelete();
         }
 
         public override bool StatLossAfterTame
@@ -150,7 +206,10 @@ namespace Server.Mobiles
         public override void Serialize(GenericWriter writer)
         {
             base.Serialize(writer);
-            writer.Write((int)2);
+            writer.Write((int)3);
+
+            writer.Write(m_Rider);
+            writer.Write(m_MountItem);
         }
 
         public override void Deserialize(GenericReader reader)
@@ -160,6 +219,10 @@ namespace Server.Mobiles
 
             switch (version)
             {
+                case 3:
+                    m_Rider = reader.ReadMobile();
+                    m_MountItem = reader.ReadItem();
+                    break;
                 case 2:
                     break;
                 case 1:
@@ -169,6 +232,9 @@ namespace Server.Mobiles
                 case 0:
                     break;
             }
+
+            if (m_MountItem == null)
+                m_MountItem = new CreatureMountItem(this, MountableCreature.GetMountItemID(Body));
         }
     }
 }
