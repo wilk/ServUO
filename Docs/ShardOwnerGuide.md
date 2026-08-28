@@ -59,16 +59,38 @@ In `Tools/publish-assets.conf`, set:
 
 The shard ships its own ClassicUO build, not a stock ClassicUO
 install. Build it from `github.com/wilk/ClassicUO`, branch
-`shard/main` - see that repo for the build command. The result must be
-one folder holding `ClassicUO.exe`, `cuo.dll`, and every other file the
-build produces.
+`shard/main`, on Windows, with Git Bash:
+
+```
+git clone --recursive -b shard/main https://github.com/wilk/ClassicUO.git
+cd ClassicUO/scripts
+bash build-naot.sh
+```
+
+This publishes the `net472` bootstrap `ClassicUO.exe` and the
+NativeAOT `cuo.dll` into a `bin/dist` folder at the repo root, next to
+every other file the build produces.
 
 Copy that build's `LICENSE.md` (ClassicUO is BSD 2-Clause, and binary
-redistribution must carry the notice) into the same folder, then point
-`CLIENT_BUILD_DIR` in `Tools/publish-assets.conf` at it.
+redistribution must carry the notice) into `bin/dist`, then point
+`CLIENT_BUILD_DIR` in `Tools/publish-assets.conf` at `bin/dist`.
 `Tools/publish-assets.sh` refuses to publish, with a clear error, if
 `ClassicUO.exe`, `cuo.dll`, or `LICENSE.md` is missing from that
 folder.
+
+`CLIENT_BUILD_DIR` must point at this build output folder, and at
+nothing else. `Tools/publish-assets.sh` copies every file it finds
+there (except `*.pdb`) into `ClientAssets/client/`, and that folder is
+published to a public web server that every player reaches over plain
+HTTP. Never point `CLIENT_BUILD_DIR` at your ClassicUO repository
+checkout - a checkout carries `.git`, local build configs, and can
+carry a private key, and every one of those files would go public with
+the next publish.
+
+Before your first publish, open `CLIENT_BUILD_DIR` and check it holds
+only the client build: `ClassicUO.exe`, `cuo.dll`, `LICENSE.md`, and
+the other files `build-naot.sh` produced. No `.git` folder, no
+unrelated config file, nothing private.
 
 ### 3. Set up the VPS
 

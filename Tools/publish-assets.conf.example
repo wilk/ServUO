@@ -27,6 +27,13 @@ MIN_LAUNCHER_VERSION=1
 SIGNING_KEY_PATH="Tools/PatchBuilder/signing-key.json"
 
 # Absolute path to the shard's ClassicUO build output (from github.com/wilk/ClassicUO,
-# branch shard/main). Must hold ClassicUO.exe, cuo.dll and LICENSE.md. The script
-# copies this folder's files (except *.pdb) into ClientAssets/client/.
+# branch shard/main, built with scripts/build-naot.sh - see "Building the client"
+# in Docs/ShardOwnerGuide.md). Must hold ClassicUO.exe, cuo.dll and LICENSE.md.
+# The script copies this folder's files (except *.pdb) into ClientAssets/client/,
+# and that folder is published to a public web server that every player reaches
+# over plain HTTP. Anything readable from CLIENT_BUILD_DIR becomes public.
+#
+# Point this at the build's own output folder (bin/dist), never at a repository
+# checkout. A checkout holds .git, local configs, and can hold a private key -
+# none of that belongs on a public server.
 CLIENT_BUILD_DIR="/path/to/ClassicUO/build/output"

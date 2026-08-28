@@ -83,13 +83,83 @@ if [[ ! -f "$CLIENT_BUILD_DIR/LICENSE.md" ]]; then
     exit 1
 fi
 
-echo "==> Staging client build into ClientAssets/client/ (skipping *.pdb, pruning removed files)"
+echo "==> Staging client build into ClientAssets/client/ (allowlist only, pruning removed/skipped files)"
 mkdir -p "$REPO_ROOT/ClientAssets/client"
-rsync -a --delete \
-    --exclude='*.pdb' \
-    --exclude='.gitkeep' --exclude='.gitignore' --exclude='README.md' --exclude='LICENSE.md' \
+
+# Only these files are legitimate output of the shard's ClassicUO build.
+# This is an allowlist, not a denylist: anything CLIENT_BUILD_DIR holds that
+# is not named here - a stray signing key, a .env, a .git folder, a local
+# debug config - is never staged, whatever it is called. See issue #55.
+CLIENT_BUILD_ALLOWLIST=(
+    "ClassicUO.exe"
+    "ClassicUO.exe.config"
+    "cuo.dll"
+    "cuoapi.dll"
+    "FNA.dll.config"
+    "FNA3D.dll"
+    "FAudio.dll"
+    "SDL3.dll"
+    "zlib.dll"
+    "libtheorafile.dll"
+    "System.Buffers.dll"
+    "System.Memory.dll"
+    "System.Numerics.Vectors.dll"
+    "System.Runtime.CompilerServices.Unsafe.dll"
+    "LICENSE.md"
+)
+
+RSYNC_CLIENT_INCLUDES=()
+for name in "${CLIENT_BUILD_ALLOWLIST[@]}"; do
+    RSYNC_CLIENT_INCLUDES+=(--include="/$name")
+done
+
+echo "    checking CLIENT_BUILD_DIR against the allowlist:"
+while IFS= read -r -d '' entry; do
+    name="$(basename "$entry")"
+    keep=0
+    for allowed in "${CLIENT_BUILD_ALLOWLIST[@]}"; do
+        if [[ "$name" == "$allowed" ]]; then
+            keep=1
+            break
+        fi
+    done
+    if [[ "$keep" -eq 0 ]]; then
+        echo "    skipped (not in the client build allowlist): $name"
+    fi
+done < <(find "$CLIENT_BUILD_DIR" -mindepth 1 -maxdepth 1 -print0)
+
+rsync -a --delete --delete-excluded \
+    --filter='P .gitkeep' --filter='P .gitignore' --filter='P README.md' \
+    "${RSYNC_CLIENT_INCLUDES[@]}" \
+    --exclude='*' \
     "$CLIENT_BUILD_DIR/" "$REPO_ROOT/ClientAssets/client/"
-cp -f "$CLIENT_BUILD_DIR/LICENSE.md" "$REPO_ROOT/ClientAssets/client/LICENSE.md"
+
+echo "==> Checking the rest of ClientAssets/ for files git does not track"
+# Everything under ClientAssets/ is published as-is to a public web root -
+# client/ is now allowlisted above, and plugins/ShardPlugin.dll is a build
+# output regenerated every run, but overrides/, cuo-data/ and plugins/ are
+# otherwise free-form folders. A file dropped there by hand (a stray key, a
+# .env, a local config) would ship to every player unless it is caught here.
+# git tracking is the allowlist for those folders - see ClientAssets/.gitignore.
+UNTRACKED_ASSET_FOUND=0
+while IFS= read -r -d '' entry; do
+    rel="${entry#"$REPO_ROOT"/}"
+    case "$rel" in
+        ClientAssets/client/*) continue ;;
+        ClientAssets/plugins/ShardPlugin.dll) continue ;;
+    esac
+    if ! git -C "$REPO_ROOT" ls-files --error-unmatch -- "$rel" >/dev/null 2>&1; then
+        echo "    untracked, will not publish: $rel"
+        UNTRACKED_ASSET_FOUND=1
+    fi
+done < <(find "$REPO_ROOT/ClientAssets" -type f -print0)
+
+if [[ "$UNTRACKED_ASSET_FOUND" -eq 1 ]]; then
+    echo "error: ClientAssets/ holds file(s) git does not track (listed above)." >&2
+    echo "Everything under ClientAssets/ is published to the public web root as-is." >&2
+    echo "Remove these files, or git add and commit them, before publishing." >&2
+    exit 1
+fi
 
 STAGING_DIR="$REPO_ROOT/publish"
 rm -rf "$STAGING_DIR"
