@@ -23,6 +23,7 @@ namespace Server.Mobiles
         private static Dictionary<Mobile, BlockEntry> m_Table = new Dictionary<Mobile, BlockEntry>();
         private static readonly int MountRange = Math.Max(0, Config.Get("General.MountRange", 3));
         private Mobile m_Rider;
+        private bool m_GrantedSwim;
 
         public BaseMount(string name, int bodyID, int itemID, AIType aiType, FightMode fightMode, int rangePerception, int rangeFight, double activeSpeed, double passiveSpeed)
             : base(aiType, fightMode, rangePerception, rangeFight, activeSpeed, passiveSpeed)
@@ -99,6 +100,19 @@ namespace Server.Mobiles
         }
 
         [CommandProperty(AccessLevel.GameMaster)]
+        public bool GrantedSwim
+        {
+            get
+            {
+                return m_GrantedSwim;
+            }
+            set
+            {
+                m_GrantedSwim = value;
+            }
+        }
+
+        [CommandProperty(AccessLevel.GameMaster)]
         public Mobile Rider
         {
             get
@@ -123,6 +137,29 @@ namespace Server.Mobiles
                         Direction = m_Rider.Direction;
                         Location = loc;
                         Map = map;
+
+                        if (m_GrantedSwim)
+                        {
+                            PlayerMobile pm = m_Rider as PlayerMobile;
+
+                            if (pm != null)
+                            {
+                                // Do not strip CanSwim here: a rider knocked off, or whose
+                                // mount dies, may be standing over deep water right now.
+                                // Hand the grant to the rider as pending; it clears on the
+                                // rider's first step onto a tile that is not water. See
+                                // CheckSwimGrant, called from PlayerMobile.OnLocationChange.
+                                pm.MountSwimGrant = true;
+                            }
+                            else
+                            {
+                                // Only players carry the pending-grant tracking; anything
+                                // else keeps the old immediate-clear behaviour.
+                                m_Rider.CanSwim = false;
+                            }
+
+                            m_GrantedSwim = false;
+                        }
 
                         NetState ns = m_Rider.NetState;
 
@@ -150,6 +187,12 @@ namespace Server.Mobiles
                     }
 
                     m_Rider = value;
+
+                    if (value != null && CanSwim && !value.CanSwim)
+                    {
+                        value.CanSwim = true;
+                        m_GrantedSwim = true;
+                    }
                 }
             }
         }
@@ -172,6 +215,44 @@ namespace Server.Mobiles
             }
 
             return onpath;
+        }
+
+        // Clears a pending mount-granted swim grant once the rider's current tile is
+        // not water. Call this after a Mobile's Location has already been updated.
+        // Only players carry this pending-grant flag.
+        public static void CheckSwimGrant(PlayerMobile m)
+        {
+            if (m == null || !m.MountSwimGrant)
+                return;
+
+            if (!m.CanSwim || IsWaterTile(m.Map, m.X, m.Y, m.Z))
+                return;
+
+            m.CanSwim = false;
+            m.MountSwimGrant = false;
+        }
+
+        private static bool IsWaterTile(Map map, int x, int y, int z)
+        {
+            if (map == null || map == Map.Internal)
+                return false;
+
+            LandTile landTile = map.Tiles.GetLandTile(x, y);
+
+            if (landTile.Z == z && (TileData.LandTable[landTile.ID & TileData.MaxLandValue].Flags & TileFlag.Wet) != 0)
+                return true;
+
+            StaticTile[] staticTiles = map.Tiles.GetStaticTiles(x, y, true);
+
+            for (int i = 0; i < staticTiles.Length; ++i)
+            {
+                StaticTile tile = staticTiles[i];
+
+                if (tile.Z == z && (TileData.ItemTable[tile.ID & TileData.MaxItemValue].Flags & TileFlag.Wet) != 0)
+                    return true;
+            }
+
+            return false;
         }
 
         public static void Dismount(Mobile dismounted)
@@ -364,7 +445,9 @@ namespace Server.Mobiles
         {
             base.Serialize(writer);
 
-            writer.Write((int)1); // version
+            writer.Write((int)2); // version
+
+            writer.Write(m_GrantedSwim);
 
             writer.Write(NextMountAbility);
 
@@ -421,6 +504,11 @@ namespace Server.Mobiles
 
             switch ( version )
             {
+                case 2:
+                    {
+                        m_GrantedSwim = reader.ReadBool();
+                        goto case 1;
+                    }
                 case 1:
                     {
                         NextMountAbility = reader.ReadDateTime();

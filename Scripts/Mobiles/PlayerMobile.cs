@@ -250,6 +250,14 @@ namespace Server.Mobiles
         [CommandProperty(AccessLevel.GameMaster)]
         public bool NextEnhanceSuccess { get { return m_NextEnhanceSuccess; } set { m_NextEnhanceSuccess = value; } }
 
+        private bool m_MountSwimGrant;
+
+        // True while this player's CanSwim came from a mount and is still pending
+        // removal on the first step onto a tile that is not water. A GM grant via
+        // [waterwalk clears this so the rule never touches a GM's own decision.
+        [CommandProperty(AccessLevel.GameMaster)]
+        public bool MountSwimGrant { get { return m_MountSwimGrant; } set { m_MountSwimGrant = value; } }
+
         private int m_GuildMessageHue, m_AllianceMessageHue;
 
 		private List<Mobile> m_AutoStabled;
@@ -3453,6 +3461,8 @@ namespace Server.Mobiles
 		{
 			CheckLightLevels(false);
 
+			BaseMount.CheckSwimGrant(this);
+
 			DesignContext context = m_DesignContext;
 
 			if (context == null || m_NoRecursion)
@@ -4508,6 +4518,9 @@ namespace Server.Mobiles
 
 			switch (version)
 			{
+                case 41:
+                    m_MountSwimGrant = reader.ReadBool();
+                    goto case 40;
                 case 40: // Version 40, moved gauntlet points, virtua artys and TOT turn ins to PointsSystem
                 case 39: // Version 39, removed ML quest save/load
                 case 38:
@@ -4974,7 +4987,9 @@ namespace Server.Mobiles
 
 			base.Serialize(writer);
 
-			writer.Write(40); // version
+			writer.Write(41); // version
+
+            writer.Write(m_MountSwimGrant);
 
             writer.Write((DateTime)NextGemOfSalvationUse);
 
