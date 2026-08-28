@@ -17,7 +17,7 @@ namespace Server.Mobiles
             this.Body = 213;
             this.BaseSoundID = 0xA3;
 
-            m_MountItem = new CreatureMountItem(this, 0x3EC5);
+            m_MountItem = new CreatureMountItem(this, MountableCreature.GetMountItemID(this.Body));
 
             this.SetStr(116, 140);
             this.SetDex(81, 105);
@@ -151,7 +151,7 @@ namespace Server.Mobiles
             }
 
             if (m_MountItem == null)
-                m_MountItem = new CreatureMountItem(this, 0x3EC5);
+                m_MountItem = new CreatureMountItem(this, MountableCreature.GetMountItemID(this.Body));
         }
     }
 }

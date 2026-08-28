@@ -3,8 +3,11 @@ using System;
 namespace Server.Mobiles
 {
     [CorpseName("a drake corpse")]
-    public class Drake : BaseCreature
+    public class Drake : BaseCreature, IMount
     {
+        private Mobile m_Rider;
+        private Item m_MountItem;
+
         [Constructable]
         public Drake()
             : base(AIType.AI_Melee, FightMode.Closest, 10, 1, 0.2, 0.4)
@@ -12,6 +15,8 @@ namespace Server.Mobiles
             Name = "a drake";
             Body = Utility.RandomList(60, 61);
             BaseSoundID = 362;
+
+            m_MountItem = new CreatureMountItem(this, MountableCreature.GetMountItemID(Body));
 
             SetStr(401, 430);
             SetDex(133, 152);
@@ -51,6 +56,60 @@ namespace Server.Mobiles
         public Drake(Serial serial)
             : base(serial)
         {
+        }
+
+        [CommandProperty(AccessLevel.GameMaster)]
+        public Mobile Rider
+        {
+            get
+            {
+                return m_Rider;
+            }
+            set
+            {
+                if (m_MountItem != null)
+                {
+                    int itemID = MountableCreature.GetMountItemID(Body);
+
+                    if (itemID != 0)
+                        m_MountItem.ItemID = itemID;
+                }
+
+                MountableCreature.SetRider(this, value, ref m_Rider, m_MountItem);
+            }
+        }
+
+        public void OnRiderDamaged(Mobile from, ref int amount, bool willKill)
+        {
+        }
+
+        public override void OnDoubleClick(Mobile from)
+        {
+            MountableCreature.TryMount(this, from);
+        }
+
+        public override bool OnBeforeDeath()
+        {
+            Rider = null;
+
+            return base.OnBeforeDeath();
+        }
+
+        public override void OnDelete()
+        {
+            Rider = null;
+
+            base.OnDelete();
+        }
+
+        public override void OnAfterDelete()
+        {
+            if (m_MountItem != null)
+                m_MountItem.Delete();
+
+            m_MountItem = null;
+
+            base.OnAfterDelete();
         }
 
         public override bool ReacquireOnMovement
@@ -132,7 +191,10 @@ namespace Server.Mobiles
         public override void Serialize(GenericWriter writer)
         {
             base.Serialize(writer);
-            writer.Write((int)2);
+            writer.Write((int)3);
+
+            writer.Write(m_Rider);
+            writer.Write(m_MountItem);
         }
 
         public override void Deserialize(GenericReader reader)
@@ -142,6 +204,10 @@ namespace Server.Mobiles
 
             switch (version)
             {
+                case 3:
+                    m_Rider = reader.ReadMobile();
+                    m_MountItem = reader.ReadItem();
+                    break;
                 case 2:
                     break;
                 case 1:
@@ -151,6 +217,9 @@ namespace Server.Mobiles
                 case 0:
                     break;
             }
+
+            if (m_MountItem == null)
+                m_MountItem = new CreatureMountItem(this, MountableCreature.GetMountItemID(Body));
         }
     }
 }

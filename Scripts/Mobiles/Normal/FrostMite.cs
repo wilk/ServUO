@@ -17,7 +17,7 @@ namespace Server.Mobiles
             Body = 0x590;
             Female = true;
 
-            m_MountItem = new CreatureMountItem(this, 0x3EDA);
+            m_MountItem = new CreatureMountItem(this, MountableCreature.GetMountItemID(Body));
 
             SetStr(1017);
             SetDex(164);
@@ -160,7 +160,7 @@ namespace Server.Mobiles
             }
 
             if (m_MountItem == null)
-                m_MountItem = new CreatureMountItem(this, 0x3EDA);
+                m_MountItem = new CreatureMountItem(this, MountableCreature.GetMountItemID(Body));
         }
     }
 }

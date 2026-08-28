@@ -16,6 +16,22 @@ namespace Server.Mobiles
     {
         private static readonly int MountRange = Math.Max(0, Config.Get("General.MountRange", 3));
 
+        public static int GetMountItemID(int body)
+        {
+            switch (body)
+            {
+                case 12: return 0x3EBF;
+                case 59: return 0x3EC0;
+                case 60: return 0x3EC1;
+                case 61: return 0x3EC2;
+                case 103: return 0x3EC4;
+                case 213: return 0x3EC5;
+                case 715: return 0x3EE3;
+                case 1424: return 0x3EDA;
+                default: return 0;
+            }
+        }
+
         public static void SetRider(BaseCreature creature, Mobile value, ref Mobile riderField, Item mountItem)
         {
             if (riderField != value)

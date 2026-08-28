@@ -5,9 +5,12 @@ using Server.Network;
 namespace Server.Mobiles
 {
     [CorpseName("a boura corpse")]
-    public class HighPlainsBoura : BaseCreature, ICarvable
+    public class HighPlainsBoura : BaseCreature, ICarvable, IMount
     {
         private bool GatheredFur { get; set; }
+
+        private Mobile m_Rider;
+        private Item m_MountItem;
 
         [Constructable]
         public HighPlainsBoura()
@@ -15,6 +18,8 @@ namespace Server.Mobiles
         {
             Name = "a high plains boura";
             Body = 715;
+
+            m_MountItem = new CreatureMountItem(this, MountableCreature.GetMountItemID(Body));
 
             SetStr(400, 435);
             SetDex(90, 96);
@@ -52,6 +57,60 @@ namespace Server.Mobiles
 
         public HighPlainsBoura(Serial serial) : base(serial)
         {
+        }
+
+        [CommandProperty(AccessLevel.GameMaster)]
+        public Mobile Rider
+        {
+            get
+            {
+                return m_Rider;
+            }
+            set
+            {
+                if (m_MountItem != null)
+                {
+                    int itemID = MountableCreature.GetMountItemID(Body);
+
+                    if (itemID != 0)
+                        m_MountItem.ItemID = itemID;
+                }
+
+                MountableCreature.SetRider(this, value, ref m_Rider, m_MountItem);
+            }
+        }
+
+        public void OnRiderDamaged(Mobile from, ref int amount, bool willKill)
+        {
+        }
+
+        public override void OnDoubleClick(Mobile from)
+        {
+            MountableCreature.TryMount(this, from);
+        }
+
+        public override bool OnBeforeDeath()
+        {
+            Rider = null;
+
+            return base.OnBeforeDeath();
+        }
+
+        public override void OnDelete()
+        {
+            Rider = null;
+
+            base.OnDelete();
+        }
+
+        public override void OnAfterDelete()
+        {
+            if (m_MountItem != null)
+                m_MountItem.Delete();
+
+            m_MountItem = null;
+
+            base.OnAfterDelete();
         }
 
         public override int Meat
@@ -141,8 +200,11 @@ namespace Server.Mobiles
         public override void Serialize(GenericWriter writer)
         {
             base.Serialize(writer);
-            writer.Write(4);
+            writer.Write(5);
             writer.Write(GatheredFur);
+
+            writer.Write(m_Rider);
+            writer.Write(m_MountItem);
         }
 
         public override void Deserialize(GenericReader reader)
@@ -159,6 +221,10 @@ namespace Server.Mobiles
 
             switch (version)
             {
+                case 5:
+                    m_Rider = reader.ReadMobile();
+                    m_MountItem = reader.ReadItem();
+                    break;
                 case 4:
                     break;
                 case 3:
@@ -166,6 +232,9 @@ namespace Server.Mobiles
                     reader.ReadItem(); // legacy mount item, from the removed mount ability
                     break;
             }
+
+            if (m_MountItem == null)
+                m_MountItem = new CreatureMountItem(this, MountableCreature.GetMountItemID(Body));
         }
     }
 }
