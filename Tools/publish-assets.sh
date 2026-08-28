@@ -50,7 +50,7 @@ echo "==> Building Plugin (Release)"
 dotnet build Plugin -c Release
 
 LAUNCHER_PUBLISH_DIR="$REPO_ROOT/Launcher/bin/Release/net10.0-windows/win-x64/publish"
-LAUNCHER_EXE="$LAUNCHER_PUBLISH_DIR/ShardLauncher.exe"
+LAUNCHER_EXE="$LAUNCHER_PUBLISH_DIR/ShardPatcher.exe"
 PLUGIN_DLL="$REPO_ROOT/Plugin/bin/Release/net10.0/ShardPlugin.dll"
 
 if [[ ! -f "$LAUNCHER_EXE" ]]; then
@@ -193,7 +193,7 @@ rsync -av --exclude='.gitkeep' --exclude='.gitignore' --exclude='README.md' \
 
 echo "==> Publishing launcher .exe and launcher.json"
 rsync -av -e "ssh ${SSH_OPTS[*]}" \
-    "$LAUNCHER_EXE" "$REMOTE:$REMOTE_WEB_ROOT/ShardLauncher.exe"
+    "$LAUNCHER_EXE" "$REMOTE:$REMOTE_WEB_ROOT/ShardPatcher.exe"
 rsync -av -e "ssh ${SSH_OPTS[*]}" \
     "$STAGING_DIR/launcher.json" "$REMOTE:$REMOTE_WEB_ROOT/launcher.json"
 

@@ -15,8 +15,8 @@ REMOTE_WEB_ROOT="/srv/shard-patch"
 # Public address players' launchers fetch from. Must match nginx's listen port.
 PATCH_SERVICE_URL="http://<SHARD_IP>:<PATCH_PORT>/"
 
-# Where players download the launcher .exe itself.
-LAUNCHER_DOWNLOAD_URL="http://<SHARD_IP>:<PATCH_PORT>/ShardLauncher.exe"
+# Where players download the patcher .exe itself.
+LAUNCHER_DOWNLOAD_URL="http://<SHARD_IP>:<PATCH_PORT>/ShardPatcher.exe"
 
 # Manifest version + minimum launcher version to stamp into this publish.
 MANIFEST_VERSION=1

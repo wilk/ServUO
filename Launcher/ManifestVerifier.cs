@@ -11,7 +11,7 @@ internal static class ManifestVerifier
     /// <summary>
     /// Verifies manifestBytes (the raw manifest.json file content) against
     /// signature using the public key embedded as a resource inside the
-    /// launcher assembly (see Launcher.csproj), so a single ShardLauncher.exe
+    /// launcher assembly (see Launcher.csproj), so a single ShardPatcher.exe
     /// is enough to verify updates without any loose file alongside it.
     /// </summary>
     public static bool Verify(byte[] manifestBytes, byte[] signature)

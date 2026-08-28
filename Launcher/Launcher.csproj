@@ -7,7 +7,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>Launcher</RootNamespace>
-    <AssemblyName>ShardLauncher</AssemblyName>
+    <AssemblyName>ShardPatcher</AssemblyName>
     <InvariantGlobalization>true</InvariantGlobalization>
 
     <!--
@@ -22,7 +22,7 @@
   <ItemGroup>
     <!--
       Embedded (not CopyToOutputDirectory) so publickey.json is baked into
-      ShardLauncher.exe by PublishSingleFile. A player only needs the one
+      ShardPatcher.exe by PublishSingleFile. A player only needs the one
       .exe; ManifestVerifier reads the key back out via
       Assembly.GetManifestResourceStream instead of a loose file on disk.
     -->

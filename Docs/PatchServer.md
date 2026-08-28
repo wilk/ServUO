@@ -12,10 +12,10 @@ The shard has no DNS name - it is reached at `http://<SHARD_IP>:<PATCH_PORT>/`.
 A real TLS certificate needs a hostname, so HTTPS is not available here.
 Integrity does not come from TLS. It comes from the manifest signature:
 `Tools/PatchBuilder` signs `manifest.json` with an ECDSA P-256 key, and
-the launcher embeds the matching public key and refuses to install
+the patcher embeds the matching public key and refuses to install
 anything if that signature does not check out, or if any downloaded
 file's SHA-256 does not match what the signed manifest says. A
-man-in-the-middle can see the traffic; it cannot make the launcher
+man-in-the-middle can see the traffic; it cannot make the patcher
 accept a file the shard owner did not sign for.
 
 ## Web root
@@ -30,11 +30,11 @@ This holds (mirrors `Tools/publish-assets.conf`'s `REMOTE_WEB_ROOT`):
 
 - `overrides/`, `cuo-data/`, `plugins/`, `client/` - copies of
   `ClientAssets/`. `client/` holds the shard's own ClassicUO build -
-  `ClassicUO.exe`, `cuo.dll` and its `LICENSE.md` - which the launcher
+  `ClassicUO.exe`, `cuo.dll` and its `LICENSE.md` - which the patcher
   installs into its own `%LOCALAPPDATA%\ServUOShard\client\` folder. A
   player never installs ClassicUO by hand.
 - `manifest.json`, `manifest.sig` - the signed file list.
-- `ShardLauncher.exe`, `launcher.json` - the launcher build + its own
+- `ShardPatcher.exe`, `launcher.json` - the patcher build + its own
   version/hash/download metadata.
 
 ## Owning user

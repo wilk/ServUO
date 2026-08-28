@@ -21,7 +21,7 @@ internal sealed class MainForm : Form
 
     public MainForm()
     {
-        Text = $"Shard Launcher (v{AppConstants.LauncherVersion})";
+        Text = $"Shard Patcher (v{AppConstants.LauncherVersion})";
         Width = 640;
         Height = 400;
         Controls.Add(_log);
@@ -72,7 +72,7 @@ internal sealed class MainForm : Form
             DialogResult result = dialog.ShowDialog(this);
             if (result != DialogResult.OK || string.IsNullOrWhiteSpace(dialog.SelectedPath))
             {
-                throw new UpdateException("A required folder was not selected. The launcher cannot continue.");
+                throw new UpdateException("A required folder was not selected. The patcher cannot continue.");
             }
 
             if (isValid(dialog.SelectedPath))
