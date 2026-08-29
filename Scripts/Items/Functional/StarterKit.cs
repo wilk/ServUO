@@ -17,7 +17,7 @@ namespace Server.Items
             m.RawDex = 150;
             m.RawInt = 150;
 
-            m.SkillsCap = 58000;
+            m.SkillsCap = Config.Get("PlayerCaps.TotalSkillCap", 7000);
 
             for (var i = 0; i < m.Skills.Length; i++)
             {
