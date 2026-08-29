@@ -19,22 +19,22 @@ namespace Server.Mobiles
 		{
 			public InternalBuyInfo()
 			{
-				Add( new GenericBuyInfo( typeof( BlackPearl ), 5, 20, 0xF7A, 0 ) );
-				Add( new GenericBuyInfo( typeof( Bloodmoss ), 7, 20, 0xF7B, 0 ) );
-				Add( new GenericBuyInfo( typeof( MandrakeRoot ), 3, 20, 0xF86, 0 ) );
-				Add( new GenericBuyInfo( typeof( Garlic ), 3, 20, 0xF84, 0 ) );
-				Add( new GenericBuyInfo( typeof( Ginseng ), 3, 20, 0xF85, 0 ) );
-				Add( new GenericBuyInfo( typeof( Nightshade ), 4, 20, 0xF88, 0 ) );
-				Add( new GenericBuyInfo( typeof( SpidersSilk ), 3, 20, 0xF8D, 0 ) );
-				Add( new GenericBuyInfo( typeof( SulfurousAsh ), 4, 20, 0xF8C, 0 ) );
+				Add( new GenericBuyInfo( typeof( BlackPearl ), 5, 20, 0xF7A, 0, true ) );
+				Add( new GenericBuyInfo( typeof( Bloodmoss ), 7, 20, 0xF7B, 0, true ) );
+				Add( new GenericBuyInfo( typeof( MandrakeRoot ), 3, 20, 0xF86, 0, true ) );
+				Add( new GenericBuyInfo( typeof( Garlic ), 3, 20, 0xF84, 0, true ) );
+				Add( new GenericBuyInfo( typeof( Ginseng ), 3, 20, 0xF85, 0, true ) );
+				Add( new GenericBuyInfo( typeof( Nightshade ), 4, 20, 0xF88, 0, true ) );
+				Add( new GenericBuyInfo( typeof( SpidersSilk ), 3, 20, 0xF8D, 0, true ) );
+				Add( new GenericBuyInfo( typeof( SulfurousAsh ), 4, 20, 0xF8C, 0, true ) );
 
 				if ( Core.AOS )
 				{
-					Add( new GenericBuyInfo( typeof( BatWing ), 4, 20, 0xF78, 0 ) );
-					Add( new GenericBuyInfo( typeof( GraveDust ), 4, 20, 0xF8F, 0 ) );
-					Add( new GenericBuyInfo( typeof( DaemonBlood ), 4, 20, 0xF7D, 0 ) );
-					Add( new GenericBuyInfo( typeof( NoxCrystal ), 4, 20, 0xF8E, 0 ) );
-					Add( new GenericBuyInfo( typeof( PigIron ), 4, 20, 0xF8A, 0 ) );
+					Add( new GenericBuyInfo( typeof( BatWing ), 4, 20, 0xF78, 0, true ) );
+					Add( new GenericBuyInfo( typeof( GraveDust ), 4, 20, 0xF8F, 0, true ) );
+					Add( new GenericBuyInfo( typeof( DaemonBlood ), 4, 20, 0xF7D, 0, true ) );
+					Add( new GenericBuyInfo( typeof( NoxCrystal ), 4, 20, 0xF8E, 0, true ) );
+					Add( new GenericBuyInfo( typeof( PigIron ), 4, 20, 0xF8A, 0, true ) );
 
 					Add( new GenericBuyInfo( typeof( NecromancerSpellbook ), 150, 10, 0x2253, 0 ) );
 				}

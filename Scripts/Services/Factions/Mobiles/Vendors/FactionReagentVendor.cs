@@ -87,14 +87,14 @@ namespace Server.Factions
             {
                 for (int i = 0; i < 2; ++i)
                 {
-                    this.Add(new GenericBuyInfo(typeof(BlackPearl), 5, 20, 0xF7A, 0));
-                    this.Add(new GenericBuyInfo(typeof(Bloodmoss), 5, 20, 0xF7B, 0));
-                    this.Add(new GenericBuyInfo(typeof(MandrakeRoot), 3, 20, 0xF86, 0));
-                    this.Add(new GenericBuyInfo(typeof(Garlic), 3, 20, 0xF84, 0));
-                    this.Add(new GenericBuyInfo(typeof(Ginseng), 3, 20, 0xF85, 0));
-                    this.Add(new GenericBuyInfo(typeof(Nightshade), 3, 20, 0xF88, 0));
-                    this.Add(new GenericBuyInfo(typeof(SpidersSilk), 3, 20, 0xF8D, 0));
-                    this.Add(new GenericBuyInfo(typeof(SulfurousAsh), 3, 20, 0xF8C, 0));
+                    this.Add(new GenericBuyInfo(typeof(BlackPearl), 5, 20, 0xF7A, 0, true));
+                    this.Add(new GenericBuyInfo(typeof(Bloodmoss), 5, 20, 0xF7B, 0, true));
+                    this.Add(new GenericBuyInfo(typeof(MandrakeRoot), 3, 20, 0xF86, 0, true));
+                    this.Add(new GenericBuyInfo(typeof(Garlic), 3, 20, 0xF84, 0, true));
+                    this.Add(new GenericBuyInfo(typeof(Ginseng), 3, 20, 0xF85, 0, true));
+                    this.Add(new GenericBuyInfo(typeof(Nightshade), 3, 20, 0xF88, 0, true));
+                    this.Add(new GenericBuyInfo(typeof(SpidersSilk), 3, 20, 0xF8D, 0, true));
+                    this.Add(new GenericBuyInfo(typeof(SulfurousAsh), 3, 20, 0xF8C, 0, true));
                 }
             }
         }

@@ -76,8 +76,8 @@ namespace Server.Mobiles
 
                 Add(new GenericBuyInfo(typeof(Beeswax), 1, 20, 0x1422, 0, true));
 
-                Add(new GenericBuyInfo(typeof(Garlic), 3, 20, 0xF84, 0));
-                Add(new GenericBuyInfo(typeof(Ginseng), 3, 20, 0xF85, 0));
+                Add(new GenericBuyInfo(typeof(Garlic), 3, 20, 0xF84, 0, true));
+                Add(new GenericBuyInfo(typeof(Ginseng), 3, 20, 0xF85, 0, true));
 
                 Add(new GenericBuyInfo(typeof(Bottle), 5, 20, 0xF0E, 0, true));
 
