@@ -152,9 +152,15 @@ namespace Server.Engines.Reports
             for (int i = 0; i < distribs.Length; ++i)
                 distribs[i] = new SkillDistribution(SkillInfo.Table[i]);
 
+            // The floor keeps its own meaning: count a character that has more than a
+            // starter's skills. It does not follow PlayerCaps.TotalSkillCap. The ceiling
+            // follows the cap, so a legal character is never dropped from the statistics.
+            const int skillTotalLowerBound = 1500;
+            int skillTotalUpperBound = Config.Get("PlayerCaps.TotalSkillCap", 7000) + 200;
+
             foreach (Mobile mob in World.Mobiles.Values)
             {
-                if (mob.SkillsTotal >= 1500 && mob.SkillsTotal <= (Config.Get("PlayerCaps.TotalSkillCap", 7000) + 200) && mob is PlayerMobile)
+                if (mob.SkillsTotal >= skillTotalLowerBound && mob.SkillsTotal <= skillTotalUpperBound && mob is PlayerMobile)
                 {
                     Skills skills = mob.Skills;
 
