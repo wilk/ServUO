@@ -64,6 +64,10 @@ namespace Server.Spells.Fourth
                 base.GetCastSkills(out min, out max);
         }
 
+        // Issue #1: a stored rune, vendor search map, or auction map already
+        // holds the destination, so the pre-cast target must not show.
+        public override bool RequiresPreCastTarget { get { return m_Entry == null && m_SearchMap == null && m_AuctionMap == null; } }
+
         public override void OnCast()
         {
             if (m_Entry == null && m_SearchMap == null && m_AuctionMap == null)

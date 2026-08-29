@@ -67,6 +67,10 @@ namespace Server.Spells
 		public virtual bool RevealOnCast { get { return true; } }
 		public virtual bool ClearHandsOnCast { get { return true; } }
 		public virtual bool ShowHandMovement { get { return true; } }
+        // Issue #1: a travel spell that already holds a destination (a
+        // runebook entry, vendor search map, or auction map) skips the
+        // pre-cast target below.
+        public virtual bool RequiresPreCastTarget { get { return true; } }
 
 		public virtual bool DelayedDamage { get { return false; } }
         public virtual Type[] DelayDamageFamily { get { return null; } }
@@ -835,7 +839,7 @@ namespace Server.Spells
                     m_Caster.Region.OnBeginSpellCast(m_Caster, this))
                 {
                     if (!m_AskedForTarget && m_TargetBeforeCast && InstantTarget == null &&
-                        m_Caster.Player && m_Caster.NetState != null)
+                        RequiresPreCastTarget && m_Caster.Player && m_Caster.NetState != null)
                     {
                         Target preTarget = CreateInstantTarget();
 

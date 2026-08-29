@@ -78,6 +78,10 @@ namespace Server.Spells.Chivalry
                 return false;
             }
         }
+        // Issue #1: a stored rune already holds the destination, so the
+        // pre-cast target must not show.
+        public override bool RequiresPreCastTarget { get { return m_Entry == null; } }
+
         public override void OnCast()
         {
             if (m_Entry == null)
