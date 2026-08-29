@@ -111,7 +111,17 @@ namespace Server.Items
             }
         }
 
+        private static readonly bool RequireFreeHandConfig = Config.Get("General.PotionsRequireFreeHand", false);
+
         public static bool HasFreeHand(Mobile m)
+        {
+            if (!RequireFreeHandConfig)
+                return true;
+
+            return HasFreeHandClassic(m);
+        }
+
+        public static bool HasFreeHandClassic(Mobile m)
         {
             Item handOne = m.FindItemOnLayer(Layer.OneHanded);
             Item handTwo = m.FindItemOnLayer(Layer.TwoHanded);
@@ -121,7 +131,7 @@ namespace Server.Items
             if (handTwo is BaseWeapon)
             {
                 BaseWeapon wep = (BaseWeapon)handTwo;
-				
+
                 if (wep.Attributes.BalancedWeapon > 0)
                     return true;
             }
