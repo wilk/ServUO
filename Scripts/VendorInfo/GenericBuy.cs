@@ -325,6 +325,18 @@ namespace Server.Mobiles
 
         public virtual void OnRestock()
         {
+            if (EconomyItem)
+            {
+                // Economy items always restock to the configured amount; the
+                // halving/doubling logic below writes m_Amount/m_MaxAmount
+                // directly and would otherwise let the advertised stock decay
+                // below BaseVendor.EconomyStockAmount across restock cycles
+                // where nobody bought the item.
+                m_MaxAmount = BaseVendor.EconomyStockAmount;
+                m_Amount = BaseVendor.EconomyStockAmount;
+                return;
+            }
+
             if (m_Amount <= 0)
             {
                 m_MaxAmount *= 2;
