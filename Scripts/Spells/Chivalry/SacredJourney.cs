@@ -78,6 +78,10 @@ namespace Server.Spells.Chivalry
                 return false;
             }
         }
+        // Issue #1: a stored rune already holds the destination, so the
+        // pre-cast target must not show.
+        public override bool RequiresPreCastTarget { get { return m_Entry == null; } }
+
         public override void OnCast()
         {
             if (m_Entry == null)
@@ -132,14 +136,17 @@ namespace Server.Spells.Chivalry
             if (galleon == null)
             {
                 Caster.SendLocalizedMessage(1116767); // The ship could not be located.
+                FinishSequence();
             }
             else if (galleon.Map == Map.Internal)
             {
                 Caster.SendLocalizedMessage(1149569); // That ship is in dry dock.
+                FinishSequence();
             }
             else if (!galleon.HasAccess(Caster))
             {
                 Caster.SendLocalizedMessage(1116617); // You do not have permission to board this ship.
+                FinishSequence();
             }
             else
             {
