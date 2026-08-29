@@ -177,7 +177,7 @@ namespace Server.Items
 				{
 					if (!from.NinjaWepCooldown)
 					{
-						if (BasePotion.HasFreeHand(from))
+						if (BasePotion.HasFreeHandClassic(from))
 						{
 							return true;
 						}
