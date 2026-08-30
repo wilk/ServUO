@@ -32,6 +32,13 @@ namespace Server.Mobiles
             }
         }
 
+        // Issue #5: keeps the mount graphic's hue in step with the creature's own hue.
+        public static void SyncHue(BaseCreature creature, Item mountItem)
+        {
+            if (mountItem != null)
+                mountItem.Hue = creature.Hue;
+        }
+
         public static void SetRider(BaseCreature creature, Mobile value, ref Mobile riderField, Item mountItem)
         {
             if (riderField != value)
@@ -67,6 +74,8 @@ namespace Server.Mobiles
                         BaseMount.Dismount(riderField);
 
                     BaseMount.Dismount(value);
+
+                    SyncHue(creature, mountItem);
 
                     if (mountItem != null)
                         value.AddItem(mountItem);
@@ -227,7 +236,22 @@ namespace Server.Mobiles
                         m_Mount = reader.ReadMobile() as IMount;
 
                         if (m_Mount == null)
+                        {
                             Delete();
+                        }
+                        else
+                        {
+                            // Issue #5: World.Load() deserializes every Mobile before any
+                            // Item, so the creature's Hue is already final here. base.Deserialize
+                            // above just set m_Hue straight from the (possibly stale) saved
+                            // value, bypassing the Hue property, so re-sync it now that both
+                            // sides are known. This is the only point that runs after both
+                            // the creature and this item have their saved fields loaded.
+                            BaseCreature creature = m_Mount as BaseCreature;
+
+                            if (creature != null)
+                                MountableCreature.SyncHue(creature, this);
+                        }
 
                         break;
                     }

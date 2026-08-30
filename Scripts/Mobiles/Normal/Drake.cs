@@ -79,6 +79,20 @@ namespace Server.Mobiles
             }
         }
 
+        [Hue, CommandProperty(AccessLevel.GameMaster)]
+        public override int Hue
+        {
+            get
+            {
+                return base.Hue;
+            }
+            set
+            {
+                base.Hue = value;
+                MountableCreature.SyncHue(this, m_MountItem);
+            }
+        }
+
         public void OnRiderDamaged(Mobile from, ref int amount, bool willKill)
         {
         }
@@ -220,6 +234,8 @@ namespace Server.Mobiles
 
             if (m_MountItem == null)
                 m_MountItem = new CreatureMountItem(this, MountableCreature.GetMountItemID(Body));
+
+            MountableCreature.SyncHue(this, m_MountItem);
         }
     }
 }
