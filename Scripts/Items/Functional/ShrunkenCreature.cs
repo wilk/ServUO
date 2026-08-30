@@ -149,6 +149,15 @@ namespace Server.Items
                 }
             }
 
+            if (oldMaster == from)
+            {
+                // Shrink.DoShrink already removed these follower slots when the creature
+                // went into the statuette. SetControlMaster (and the staff claim above)
+                // only add the slots back when the master changes, so a restore to the
+                // same master needs the add here, or the slots stay lost for good.
+                m_Creature.AddFollowers();
+            }
+
             // The claim above never touches the tame skill or the loyalty. Without this, a
             // finder with no taming skill fails every order of a creature with a tame skill
             // above 29.1, and CheckControlChance keeps dropping the loyalty on every failure.
@@ -323,6 +332,23 @@ namespace Server.Items
             if (m_Creature == null || m_Creature.Deleted)
             {
                 Delete();
+            }
+            else
+            {
+                // A statuette saved before the shrink potion stopped counting a shrunk
+                // creature still holds a creature that BaseCreature.Deserialize just
+                // added back to its master's follower count. Take it back out. The
+                // creature may not have run its own Deserialize yet at this point, so
+                // wait for the whole world to finish loading first.
+                BaseCreature creature = m_Creature;
+
+                EventSink.WorldLoad += delegate
+                {
+                    if (creature != null && !creature.Deleted)
+                    {
+                        creature.RemoveFollowers();
+                    }
+                };
             }
         }
     }

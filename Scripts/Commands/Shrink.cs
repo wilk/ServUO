@@ -121,6 +121,11 @@ namespace Server.Commands
             creature.Combatant = null;
             creature.Warmode = false;
 
+            // A shrunk creature stops counting against the master's follower
+            // limit. ControlMaster stays set: the statuette still shows the
+            // owner name and the restore still keeps the bond.
+            creature.RemoveFollowers();
+
             creature.Internalize();
 
             if (creature.Spawner != null)
