@@ -750,7 +750,8 @@ namespace Server.Network
         MountSpeed,
         WalkSpeed,
         WalkSpeedFast,
-        TeleportSpeed
+        TeleportSpeed,
+        SwiftMountSpeed
     }
 
 	public sealed class SpeedControl : Packet
@@ -759,6 +760,7 @@ namespace Server.Network
         public static readonly Packet WalkSpeedFast = SetStatic(new SpeedControl(SpeedControlType.WalkSpeedFast));
         public static readonly Packet WalkSpeed = SetStatic(new SpeedControl(SpeedControlType.WalkSpeed));
         public static readonly Packet MountSpeed = SetStatic(new SpeedControl(SpeedControlType.MountSpeed));
+        public static readonly Packet SwiftMountSpeed = SetStatic(new SpeedControl(SpeedControlType.SwiftMountSpeed));
         public static readonly Packet Disable = SetStatic(new SpeedControl(SpeedControlType.Disable));
 
 		public SpeedControl(SpeedControlType type)
@@ -767,6 +769,13 @@ namespace Server.Network
 			EnsureCapacity(3);
 
 			m_Stream.Write((short)0x26);
+
+            // SwiftMountSpeed (5) is a shard-only value outside the OSI
+            // 0-4 table. Only the shard's patched client acts on it; an
+            // unpatched client clamps the unknown value to Normal and
+            // keeps normal mount speed. The server enforces the real
+            // step rate either way (see PlayerMobile.ComputeMovementSpeed),
+            // so this is a client-side hint only, never a game rule.
             m_Stream.Write((byte)type);
 		}
 	}

@@ -1303,8 +1303,17 @@ namespace Server.Mobiles
                     {
                         mount.Rider = from;
                     }
-                }, 
+                },
                 (EtherealMount)from.Mount);
+            }
+
+            // A swift horse survives a relog. Resend the speed mode, since the
+            // client does not remember it across a login.
+            BaseMount loginMount = from.Mount as BaseMount;
+
+            if (loginMount != null && loginMount.SwiftMount)
+            {
+                from.SendSpeedControl(SpeedControlType.SwiftMountSpeed);
             }
 
             from.CheckStatTimers();
@@ -1650,6 +1659,15 @@ namespace Server.Mobiles
             BaseFamiliar.OnLogout(pm);
 
             BaseEscort.DeleteEscort(pm);
+
+            // Drop the swift speed mode on logout. Login resends it if the
+            // player is still mounted on a swift horse.
+            BaseMount logoutMount = pm.Mount as BaseMount;
+
+            if (logoutMount != null && logoutMount.SwiftMount)
+            {
+                pm.SendSpeedControl(SpeedControlType.Disable);
+            }
         }
 
 		private static void EventSink_Connected(ConnectedEventArgs e)
@@ -5986,6 +6004,17 @@ namespace Server.Mobiles
 
 			if (onHorse || (animalContext != null && animalContext.SpeedBoost))
 			{
+				BaseMount mount = Mount as BaseMount;
+
+				// A swift mount moves the rider at half the normal step delay.
+				// Every other mount keeps the default RunMount/WalkMount value.
+				// Derived from RunMount/WalkMount (not hardcoded) so a future
+				// change to those statics cannot desync the swift-mount ratio.
+				if (mount != null && mount.SwiftMount)
+				{
+					return running ? RunMount / 2 : WalkMount / 2;
+				}
+
 				return (running ? RunMount : WalkMount);
 			}
 

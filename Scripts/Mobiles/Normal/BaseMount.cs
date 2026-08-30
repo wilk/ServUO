@@ -66,6 +66,16 @@ namespace Server.Mobiles
             }
         }
 
+        // True only for a mount that moves a rider at the swift step delay.
+        // See PlayerMobile.ComputeMovementSpeed.
+        public virtual bool SwiftMount
+        {
+            get
+            {
+                return false;
+            }
+        }
+
         [Hue, CommandProperty(AccessLevel.GameMaster)]
         public override int Hue
         {
@@ -170,6 +180,12 @@ namespace Server.Mobiles
 
                         if (InternalItem != null)
                             InternalItem.Internalize();
+
+                        // Tell the client to drop the swift step delay. The server
+                        // stays authoritative either way; this only fixes the client's
+                        // own animation timing.
+                        if (SwiftMount)
+                            m_Rider.SendSpeedControl(SpeedControlType.Disable);
                     }
                     else
                     {
@@ -184,6 +200,10 @@ namespace Server.Mobiles
                         value.Direction = Direction;
 
                         Internalize();
+
+                        // Tell the client to use the swift step delay for this rider.
+                        if (SwiftMount)
+                            value.SendSpeedControl(SpeedControlType.SwiftMountSpeed);
                     }
 
                     m_Rider = value;
