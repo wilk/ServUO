@@ -1273,6 +1273,15 @@ namespace Server.Mobiles
                 ((PlayerMobile)from).ValidateEquipment();
 
                 ReportMurdererGump.CheckMurderer(from);
+
+                // A character saved before the follower cap rose to 10 still
+                // holds the old value. Raise it on login. Never lower it.
+                int followersMax = Config.Get("PlayerCaps.FollowersMax", 5);
+
+                if (from.FollowersMax < followersMax)
+                {
+                    from.FollowersMax = followersMax;
+                }
 			}
             else if (Siege.SiegeShard && from.Map == Map.Trammel && from.AccessLevel == AccessLevel.Player)
             {

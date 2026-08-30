@@ -6630,6 +6630,12 @@ namespace Server
 				m_Player = value;
 				InvalidateProperties();
 
+				if (m_Player)
+				{
+					// A mobile becomes a player here. Apply the player follower cap.
+					m_FollowersMax = Config.Get("PlayerCaps.FollowersMax", 5);
+				}
+
 				if (!m_Player && m_Dex <= 100 && m_CombatTimer != null)
 				{
 					m_CombatTimer.Priority = TimerPriority.FiftyMS;
@@ -11316,6 +11322,9 @@ namespace Server
             m_StrMaxCap = Config.Get("PlayerCaps.StrMaxCap", 150);
             m_DexMaxCap = Config.Get("PlayerCaps.DexMaxCap", 150);
             m_IntMaxCap = Config.Get("PlayerCaps.IntMaxCap", 150);
+            // Every Mobile runs this init, not only players. Keep a fixed
+            // default here. The raised player cap applies only in the
+            // Player property setter, below.
 			m_FollowersMax = 5;
 			m_Skills = new Skills(this);
 			m_Items = new List<Item>();
