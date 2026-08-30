@@ -236,7 +236,22 @@ namespace Server.Mobiles
                         m_Mount = reader.ReadMobile() as IMount;
 
                         if (m_Mount == null)
+                        {
                             Delete();
+                        }
+                        else
+                        {
+                            // Issue #5: World.Load() deserializes every Mobile before any
+                            // Item, so the creature's Hue is already final here. base.Deserialize
+                            // above just set m_Hue straight from the (possibly stale) saved
+                            // value, bypassing the Hue property, so re-sync it now that both
+                            // sides are known. This is the only point that runs after both
+                            // the creature and this item have their saved fields loaded.
+                            BaseCreature creature = m_Mount as BaseCreature;
+
+                            if (creature != null)
+                                MountableCreature.SyncHue(creature, this);
+                        }
 
                         break;
                     }
