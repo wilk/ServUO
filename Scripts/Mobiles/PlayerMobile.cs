@@ -6008,9 +6008,11 @@ namespace Server.Mobiles
 
 				// A swift mount moves the rider at half the normal step delay.
 				// Every other mount keeps the default RunMount/WalkMount value.
+				// Derived from RunMount/WalkMount (not hardcoded) so a future
+				// change to those statics cannot desync the swift-mount ratio.
 				if (mount != null && mount.SwiftMount)
 				{
-					return running ? 50 : 100;
+					return running ? RunMount / 2 : WalkMount / 2;
 				}
 
 				return (running ? RunMount : WalkMount);
