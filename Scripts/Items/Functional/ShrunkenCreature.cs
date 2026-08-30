@@ -157,6 +157,14 @@ namespace Server.Items
                 // same master needs the add here, or the slots stay lost for good.
                 m_Creature.AddFollowers();
             }
+            else if (oldMaster != null)
+            {
+                // The ControlMaster setter above still saw the old master on m_Creature,
+                // so it ran RemoveFollowers() against him again, on top of the one
+                // Shrink.DoShrink already ran. Give the old master his slots back here,
+                // or he keeps follower capacity he never gave up.
+                oldMaster.Followers += m_Creature.ControlSlots;
+            }
 
             // The claim above never touches the tame skill or the loyalty. Without this, a
             // finder with no taming skill fails every order of a creature with a tame skill
