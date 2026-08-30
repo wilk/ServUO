@@ -542,8 +542,6 @@ namespace Server.Mobiles
             Layer = Layer.Backpack;
         }
 
-        public override int DefaultMaxWeight { get { return 400; } }
-
         public StewardBackpack(Serial serial)
             : base(serial)
         {

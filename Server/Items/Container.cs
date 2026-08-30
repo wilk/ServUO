@@ -1669,8 +1669,8 @@ namespace Server.Items
             UpdateContainerData();
         }
 
-        private static int m_GlobalMaxItems = 125;
-        private static int m_GlobalMaxWeight = 400;
+        private static int m_GlobalMaxItems = Config.Get("General.ContainerMaxItems", 1250);
+        private static int m_GlobalMaxWeight = Config.Get("General.ContainerMaxWeight", 4000);
 
         public static int GlobalMaxItems { get { return m_GlobalMaxItems; } set { m_GlobalMaxItems = value; } }
         public static int GlobalMaxWeight { get { return m_GlobalMaxWeight; } set { m_GlobalMaxWeight = value; } }
