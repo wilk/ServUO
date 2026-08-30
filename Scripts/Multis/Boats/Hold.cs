@@ -12,8 +12,6 @@ namespace Server.Items
         [CommandProperty(AccessLevel.GameMaster)]
         public BaseBoat Boat { get; private set; }
 
-        public override int DefaultMaxWeight { get { return 400; } }
-
         public Hold(BaseBoat boat) : base(0x3EAE)
         {
             Boat = boat;
