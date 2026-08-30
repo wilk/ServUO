@@ -32,6 +32,13 @@ namespace Server.Mobiles
             }
         }
 
+        // Issue #5: keeps the mount graphic's hue in step with the creature's own hue.
+        public static void SyncHue(BaseCreature creature, Item mountItem)
+        {
+            if (mountItem != null)
+                mountItem.Hue = creature.Hue;
+        }
+
         public static void SetRider(BaseCreature creature, Mobile value, ref Mobile riderField, Item mountItem)
         {
             if (riderField != value)
@@ -67,6 +74,8 @@ namespace Server.Mobiles
                         BaseMount.Dismount(riderField);
 
                     BaseMount.Dismount(value);
+
+                    SyncHue(creature, mountItem);
 
                     if (mountItem != null)
                         value.AddItem(mountItem);
