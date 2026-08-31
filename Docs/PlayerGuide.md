@@ -22,14 +22,32 @@ Do these steps once, in order.
 You do not install ClassicUO yourself. The patcher installs the
 shard's own ClassicUO build for you, the first time it runs.
 
-### Windows SmartScreen
+### Warnings from the browser, from Windows and from your antivirus
 
 `ShardPatcher.exe` is not signed with a commercial code-signing
-certificate. Windows may show "Windows protected your PC" the first
-time you run it. Click **More info**, then click **Run anyway**. This
-warning is normal for a small, self-built tool like this patcher. It
-does not mean the file is unsafe by itself - it means Windows does not
-recognize the publisher.
+certificate. No cloud reputation database knows this file. Expect a
+warning at each of the three steps below. Each one is normal for a
+small, self-built tool. None of them means the file is unsafe.
+
+**Your browser may block the download.** Chrome and Edge report an
+unsigned executable as not commonly downloaded. Open the browser's
+download list, find the blocked file, and choose **Keep** or **Keep
+anyway**.
+
+**Windows SmartScreen may block the first run.** Windows shows
+"Windows protected your PC". Click **More info**, then click **Run
+anyway**. Windows does not recognize the publisher, and it says so.
+
+**Your antivirus may quarantine the file.** An unknown executable that
+downloads other executables looks like a generic threat to a scanner
+that goes by reputation. The detection name it reports is a generic
+one, not a name for this file. If you trust this shard, restore the
+file from quarantine and add an exclusion for `ShardPatcher.exe` and
+for the folder `%LOCALAPPDATA%\ServUOShard\`.
+
+If you would rather check first, ask shard staff for the file's
+SHA-256 and compare it with `certutil -hashfile ShardPatcher.exe
+SHA256`.
 
 ### What the patcher asks on first run
 
