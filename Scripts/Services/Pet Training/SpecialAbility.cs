@@ -2076,7 +2076,7 @@ namespace Server.Mobiles
                 creature.DoHarmful(m, false);
                 creature.Direction = creature.GetDirectionTo(m);
 
-                SpiderWebbing web = new SpiderWebbing(m);               
+                SpiderWebbing web = new SpiderWebbing(m, creature);
                 Effects.SendMovingParticles(creature, m, web.ItemID, 12, 0, false, false, 0, 0, 9502, 1, 0, (EffectLayer)255, 0x100);
                 Timer.DelayCall(TimeSpan.FromSeconds(0.5), () => web.MoveToWorld(m.Location, m.Map));
             }
