@@ -39,7 +39,7 @@ namespace Server.Items
                 {
                     /*
                      * Each weapon has a base and max range available to it, where the base
-                     * range is modified by the player’s strength to determine the actual range.
+                     * range is modified by the playerï¿½s strength to determine the actual range.
                      *
                      * Determining the maximum range of each weapon while in use:
                      * - Range = BaseRange + ((PlayerStrength - MinWeaponStrReq) / ((150 - MinWeaponStrReq) / 3))
@@ -94,6 +94,16 @@ namespace Server.Items
             get
             {
                 return 0x5D4;
+            }
+        }
+
+        // Issue #8: a thrown weapon plays no separate fire sound. The throw
+        // and the hit or the miss sound cover it.
+        public override int DefFireSound
+        {
+            get
+            {
+                return -1;
             }
         }
 

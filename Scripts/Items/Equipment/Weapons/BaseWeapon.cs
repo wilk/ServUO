@@ -1807,13 +1807,13 @@ namespace Server.Items
             return sp == null || !sp.IsCasting || !sp.BlocksWeaponSwing;
         }
 
-        // Issue #13: resolves the swing that OnSwing deferred. Re-checks the
-        // fight the same way CombatTimer.OnTick does, then runs the hit or
-        // the miss. Drops the hit and plays nothing if the fight is no
-        // longer valid.
+        // Issue #8: the gates a deferred step re-checks before it plays
+        // anything. ResolveSwing calls this before the hit or the miss.
+        // BaseRanged.OnSwing calls it again before the projectile fires,
+        // because the fire step lands even earlier than the hit.
         // Protected, not private, so BaseRanged.OnSwing can reuse it instead
         // of duplicating the fight re-check.
-        protected void ResolveSwing(Mobile attacker, IDamageable damageable, double damageBonus)
+        protected virtual bool CanStillResolve(Mobile attacker, IDamageable damageable)
         {
             Mobile defender = damageable as Mobile;
 
@@ -1821,25 +1821,39 @@ namespace Server.Items
                 !damageable.Alive || !attacker.Alive || !attacker.CanSee(damageable) ||
                 (defender != null && defender.IsDeadBondedPet) || attacker.IsDeadBondedPet)
             {
-                return;
+                return false;
             }
 
             // Issue #13: the attacker can change the weapon during the delay.
             // Drop the hit if this weapon left the hand, or if it is gone.
             if (Deleted || attacker.Weapon != this)
             {
-                return;
+                return false;
             }
 
             if (!attacker.InRange(damageable, MaxRange) || !attacker.InLOS(damageable))
             {
-                return;
+                return false;
             }
 
             // Issue #13: re-check the gates that OnSwing tested. The attacker
             // can become paralyzed or frozen, or can start a spell, during the
             // delay.
             if (!CanStillSwing(attacker))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        // Issue #13: resolves the swing that OnSwing deferred. Re-checks the
+        // fight the same way CombatTimer.OnTick does, then runs the hit or
+        // the miss. Drops the hit and plays nothing if the fight is no
+        // longer valid.
+        protected void ResolveSwing(Mobile attacker, IDamageable damageable, double damageBonus)
+        {
+            if (!CanStillResolve(attacker, damageable))
             {
                 return;
             }

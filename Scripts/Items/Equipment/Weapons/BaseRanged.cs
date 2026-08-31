@@ -17,6 +17,19 @@ namespace Server.Items
 		public override int DefHitSound { get { return 0x234; } }
 		public override int DefMissSound { get { return 0x238; } }
 
+        // Issue #8: the fire sound plays when the projectile leaves the
+        // weapon, ShootDelay after the shoot animation starts. Provisional,
+        // tuned in game. -1 plays no sound; BaseThrown overrides this.
+        public virtual int DefFireSound { get { return 0x224; } }
+        public virtual int FireSound { get { return DefFireSound; } }
+
+        // Issue #8: the projectile leaves ShootDelay after the shoot
+        // animation starts. The hit or the miss resolves ProjectileDelay
+        // after that. Both values are provisional. The shard owner tunes
+        // them in game.
+        public static TimeSpan ShootDelay = TimeSpan.FromMilliseconds(500);
+        public static TimeSpan ProjectileDelay = TimeSpan.FromMilliseconds(250);
+
 		public override SkillName DefSkill { get { return SkillName.Archery; } }
 		public override WeaponType DefType { get { return WeaponType.Ranged; } }
 		public override WeaponAnimation DefAnimation { get { return WeaponAnimation.ShootXBow; } }
@@ -105,21 +118,45 @@ namespace Server.Items
                         {
                             PlaySwingAnimation(attacker);
 
-                            // Issue #13: the hit resolves HitDelay after the
-                            // swing animation starts. Clamp the delay below the
-                            // swing delay, because the pre-AOS swing delay has
-                            // no floor.
-                            TimeSpan hitDelay = HitDelay < swingDelay ? HitDelay : swingDelay;
+                            // Issue #8: the projectile leaves ShootDelay after
+                            // the shoot animation starts. The hit or the miss
+                            // resolves ProjectileDelay after that. Clamp the
+                            // sum below the swing delay, because the pre-AOS
+                            // swing delay has no floor. Shorten ShootDelay
+                            // first, so the fire step always lands before the
+                            // resolve step.
+                            TimeSpan shootDelay = ShootDelay < swingDelay ? ShootDelay : swingDelay;
+                            TimeSpan projectileDelay = ProjectileDelay < swingDelay - shootDelay
+                                ? ProjectileDelay
+                                : swingDelay - shootDelay;
 
-                            Timer.DelayCall(hitDelay, () => ResolveSwing(attacker, damageable, 1.0));
-                        }
-                        else if (CheckHit(attacker, damageable))
-                        {
-                            OnHit(attacker, damageable);
+                            Timer.DelayCall(shootDelay, () =>
+                            {
+                                // Issue #8: a shot the server drops between the
+                                // swing and the fire step plays nothing more.
+                                if (CanStillResolve(attacker, damageable))
+                                {
+                                    OnProjectileFired(attacker, damageable);
+                                }
+                            });
+
+                            Timer.DelayCall(shootDelay + projectileDelay, () => ResolveSwing(attacker, damageable, 1.0));
                         }
                         else
                         {
-                            OnMiss(attacker, damageable);
+                            // Issue #8: a special move calls OnSwing outside
+                            // the combat timer. It keeps the old, immediate
+                            // order, so the split above loses nothing here.
+                            OnProjectileFired(attacker, damageable);
+
+                            if (CheckHit(attacker, damageable))
+                            {
+                                OnHit(attacker, damageable);
+                            }
+                            else
+                            {
+                                OnMiss(attacker, damageable);
+                            }
                         }
 					}
 				}
@@ -239,10 +276,21 @@ namespace Server.Items
 				}
 			}
 
-            attacker.MovingEffect(damageable, EffectID, 18, 1, false, false);
-
 			return true;
 		}
+
+        // Issue #8: fires the projectile that OnFired used to launch right
+        // away. Runs ShootDelay after the shoot animation starts, on the
+        // combat timer path, or right after OnFired on the immediate path.
+        public virtual void OnProjectileFired(Mobile attacker, IDamageable damageable)
+        {
+            attacker.MovingEffect(damageable, EffectID, 18, 1, false, false);
+
+            if (FireSound != -1)
+            {
+                attacker.PlaySound(FireSound);
+            }
+        }
 
 		public override void Serialize(GenericWriter writer)
 		{
