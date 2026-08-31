@@ -190,7 +190,8 @@ namespace Server.Spells.Spellweaving
                     if (count > 1)
                         damage /= Math.Min(3, count);
 
-                    AOS.Damage(m, m_Owner, damage, 0, 100, 0, 0, 0, 0, 0, DamageType.SpellAOE);
+                    // Issue #9: bonus wildfire damage a player deals to a wild creature.
+                    AOS.Damage(m, m_Owner, SpellHelper.ScalePveSpellDamage(m_Owner, m, damage), 0, 100, 0, 0, 0, 0, 0, DamageType.SpellAOE);
                     WildfireSpell.Table[m] = Core.TickCount + 1000;
                 }
 

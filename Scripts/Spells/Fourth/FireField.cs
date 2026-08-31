@@ -226,7 +226,8 @@ namespace Server.Spells.Fourth
                         m.SendLocalizedMessage(501783); // You feel yourself resisting magical energy.
                     }
 
-                    AOS.Damage(m, m_Caster, damage, 0, 100, 0, 0, 0);
+                    // Issue #9: bonus fire field damage a player deals to a wild creature.
+                    AOS.Damage(m, m_Caster, SpellHelper.ScalePveSpellDamage(m_Caster, m, damage), 0, 100, 0, 0, 0);
                     m.PlaySound(0x208);
 
                     if (m is BaseCreature)
@@ -298,7 +299,8 @@ namespace Server.Spells.Fourth
                                     m.SendLocalizedMessage(501783); // You feel yourself resisting magical energy.
                                 }
 
-                                AOS.Damage(m, caster, damage, 0, 100, 0, 0, 0);
+                                // Issue #9: bonus fire field damage a player deals to a wild creature.
+                                AOS.Damage(m, caster, SpellHelper.ScalePveSpellDamage(caster, m, damage), 0, 100, 0, 0, 0);
                                 m.PlaySound(0x208);
 
                                 if (m is BaseCreature)
