@@ -311,6 +311,7 @@ namespace Server.Mobiles
                         Point3D point = points[Utility.Random(points.Count)];
                         from.MoveToWorld(point, pmmap);
                         from.Frozen = true;
+                        from.OnFrozenBy(this);
 
                         Timer.DelayCall(TimeSpan.FromSeconds(3), () =>
                         {

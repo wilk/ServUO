@@ -68,7 +68,7 @@ namespace Server.Spells.Spellweaving
             {
                 this.Caster.SendLocalizedMessage(1075124); // You must wait before casting that spell again.
             }
-            else if (this.Caster.Combatant != null)
+            else if (SpellHelper.CheckCombat(this.Caster))
             {
                 this.Caster.SendLocalizedMessage(1072586); // You cannot cast Ethereal Voyage while you are in combat.
             }

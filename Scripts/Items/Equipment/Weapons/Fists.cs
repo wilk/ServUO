@@ -180,7 +180,7 @@ namespace Server.Items
                                 attacker.SendLocalizedMessage(1004013); // You successfully stun your opponent!
                                 defender.SendLocalizedMessage(1004014); // You have been stunned!
 
-                                defender.Freeze(TimeSpan.FromSeconds(4.0));
+                                defender.Freeze(TimeSpan.FromSeconds(4.0), attacker);
                             }
                             else
                             {

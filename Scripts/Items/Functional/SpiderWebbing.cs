@@ -11,11 +11,16 @@ namespace Server.Items
         private static List<Mobile> m_WebVictims = new List<Mobile>();
 
         public SpiderWebbing(Mobile m)
+            : this(m, null)
+        {
+        }
+
+        public SpiderWebbing(Mobile m, Mobile from)
             : base(0xEE3 + Utility.Random(4))
-        {            
+        {
             Movable = false;
 
-            BeginWebbing(m);
+            BeginWebbing(m, from);
 
             m_Timer = new InternalTimer(this, m);
             m_Timer.Start();
@@ -27,12 +32,22 @@ namespace Server.Items
         }
 
         public void BeginWebbing(Mobile m)
-        {            
+        {
+            BeginWebbing(m, null);
+        }
+
+        public void BeginWebbing(Mobile m, Mobile from)
+        {
             m.RevealingAction();
-            m.Frozen = true;            
+            m.Frozen = true;
             m.SendLocalizedMessage(1113247); // You are wrapped in spider webbing and cannot move!
             m_WebVictims.Add(m);
             BuffInfo.AddBuff(m, new BuffInfo(BuffIcon.Webbing, 1153789, 1153825));
+
+            if (from != null)
+            {
+                m.OnFrozenBy(from);
+            }
         }
 
         public static bool IsTrapped(Mobile m)

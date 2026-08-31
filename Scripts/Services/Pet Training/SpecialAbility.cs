@@ -2076,7 +2076,7 @@ namespace Server.Mobiles
                 creature.DoHarmful(m, false);
                 creature.Direction = creature.GetDirectionTo(m);
 
-                SpiderWebbing web = new SpiderWebbing(m);               
+                SpiderWebbing web = new SpiderWebbing(m, creature);
                 Effects.SendMovingParticles(creature, m, web.ItemID, 12, 0, false, false, 0, 0, 9502, 1, 0, (EffectLayer)255, 0x100);
                 Timer.DelayCall(TimeSpan.FromSeconds(0.5), () => web.MoveToWorld(m.Location, m.Map));
             }
@@ -2494,6 +2494,7 @@ namespace Server.Mobiles
 
             target.SendLocalizedMessage(number, creature.Name, 0x21);
             target.Frozen = true;
+            target.OnFrozenBy(creature);
 
             BuffInfo.AddBuff(target, new BuffInfo(BuffIcon.TrueFear, 1153791, 1153827, TimeSpan.FromSeconds(seconds), target));
 
@@ -2539,6 +2540,7 @@ namespace Server.Mobiles
             if (defender.Alive)
             {
                 defender.Frozen = true;
+                defender.OnFrozenBy(creature);
 
                 Timer.DelayCall(TimeSpan.FromSeconds(5.0), victim =>
                 {

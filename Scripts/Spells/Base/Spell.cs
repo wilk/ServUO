@@ -187,9 +187,9 @@ namespace Server.Spells
 
         public void HarmfulSpell(IDamageable d)
 		{
-			if (d is BaseCreature)
+			if (d is Mobile)
 			{
-				((BaseCreature)d).OnHarmfulSpell(m_Caster);
+				((Mobile)d).OnHarmfulSpell(m_Caster);
 			}
             else if (d is IDamageableItem)
             {

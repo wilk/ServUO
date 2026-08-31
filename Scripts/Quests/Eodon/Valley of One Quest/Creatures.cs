@@ -219,7 +219,7 @@ namespace Server.Mobiles
             {
                 if ((m is PlayerMobile || (m is BaseCreature && ((BaseCreature)m).GetMaster() is PlayerMobile)) && m.CanBeHarmful(Owner, false))
                 {
-                    m.Freeze(TimeSpan.FromSeconds(Utility.RandomMinMax(5, 10)));
+                    m.Freeze(TimeSpan.FromSeconds(Utility.RandomMinMax(5, 10)), Owner);
 
                     if (Owner.CanBeHarmful(m))
                     {

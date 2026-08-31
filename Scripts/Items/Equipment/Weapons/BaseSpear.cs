@@ -70,7 +70,7 @@ namespace Server.Items
             if (!Core.AOS && defender is Mobile && this.Layer == Layer.TwoHanded && (attacker.Skills[SkillName.Anatomy].Value / 400.0) >= Utility.RandomDouble())
             {
                 ((Mobile)defender).SendMessage("You receive a paralyzing blow!"); // Is this not localized?
-                ((Mobile)defender).Freeze(TimeSpan.FromSeconds(2.0));
+                ((Mobile)defender).Freeze(TimeSpan.FromSeconds(2.0), attacker);
 
                 attacker.SendMessage("You deliver a paralyzing blow!"); // Is this not localized?
                 attacker.PlaySound(0x11C);

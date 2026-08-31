@@ -303,7 +303,7 @@ namespace Server.Mobiles
                         if (m.X > this.X - 4 && m.X < this.X + 4 && m.Y > this.Y - 4 && m.Y < this.Y + 4)
                             continue;
 
-                        m.Freeze(TimeSpan.FromSeconds(2));
+                        m.Freeze(TimeSpan.FromSeconds(2), this);
                         BleedAttack.BeginBleed(m, this, false);
 
                         AOS.Damage(target, this, Utility.RandomMinMax(100, 110), 100, 0, 0, 0, 0);

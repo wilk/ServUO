@@ -70,7 +70,7 @@ namespace Server.Items
 
                 if(!immune)
                 {
-                    defender.Freeze(TimeSpan.FromSeconds(2.0));
+                    defender.Freeze(TimeSpan.FromSeconds(2.0), attacker);
                     doEffects = true;
                 }
             }

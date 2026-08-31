@@ -1778,6 +1778,22 @@ namespace Server
 			}
 		}
 
+		public void Freeze(TimeSpan duration, Mobile from)
+		{
+			Freeze(duration);
+
+			if (from != null && from != this)
+			{
+				OnFrozenBy(from);
+			}
+		}
+
+		/// <summary>
+		///     Overridable. Event invoked when another Mobile freezes this Mobile.
+		/// </summary>
+		public virtual void OnFrozenBy(Mobile from)
+		{ }
+
 		/// <summary>
 		///     Gets or sets the <see cref="StatLockType">lock state</see> for the <see cref="RawStr" /> property.
 		/// </summary>
@@ -2306,6 +2322,12 @@ namespace Server
 			return Math.Sqrt((xDelta * xDelta) + (yDelta * yDelta));
 		}
 
+		/// <summary>
+		///     Overridable. Determines whether <see cref="AggressiveAction" /> may set
+		///     <see cref="Combatant" /> to the aggressor when this mobile has no combatant.
+		/// </summary>
+		public virtual bool SetCombatantOnAggression { get { return true; } }
+
 		public virtual void AggressiveAction(Mobile aggressor)
 		{
 			AggressiveAction(aggressor, false);
@@ -2433,7 +2455,7 @@ namespace Server
                 UpdateAggrExpire();
             }
 
-            if (setCombatant && !Hidden)
+            if (setCombatant && !Hidden && SetCombatantOnAggression)
                 Combatant = aggressor;
 
             Region.OnAggressed(aggressor, this, criminal);
@@ -8062,6 +8084,12 @@ namespace Server
 				CriminalAction(false);
 			}
 		}
+
+		/// <summary>
+		///     Overridable. Event invoked when a harmful spell lands on this Mobile.
+		/// </summary>
+		public virtual void OnHarmfulSpell(Mobile from)
+		{ }
 
 		public virtual void DoHarmful(IDamageable target)
 		{
