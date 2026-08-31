@@ -14,23 +14,40 @@ Do these steps once, in order.
 
 1. Install Ultima Online (the classic client). Note the install folder -
    it must contain `client.exe`.
-2. Download `ShardPatcher.exe` from the shard's patch service. Ask
-   shard staff for the download link if you do not have it. The
-   patcher is a single file. You do not need any other file next to
-   it.
+2. Download `ShardPatcher.exe` from the shard's patch service:
+   <http://46.62.226.1:8120/ShardPatcher.exe>. The patcher is a
+   single file. You do not need any other file next to it.
 3. Run `ShardPatcher.exe`.
 
 You do not install ClassicUO yourself. The patcher installs the
 shard's own ClassicUO build for you, the first time it runs.
 
-### Windows SmartScreen
+### Warnings from the browser, from Windows and from your antivirus
 
 `ShardPatcher.exe` is not signed with a commercial code-signing
-certificate. Windows may show "Windows protected your PC" the first
-time you run it. Click **More info**, then click **Run anyway**. This
-warning is normal for a small, self-built tool like this patcher. It
-does not mean the file is unsafe by itself - it means Windows does not
-recognize the publisher.
+certificate. No cloud reputation database knows this file. Expect a
+warning at each of the three steps below. Each one is normal for a
+small, self-built tool. None of them means the file is unsafe.
+
+**Your browser may block the download.** Chrome and Edge report an
+unsigned executable as not commonly downloaded. Open the browser's
+download list, find the blocked file, and choose **Keep** or **Keep
+anyway**.
+
+**Windows SmartScreen may block the first run.** Windows shows
+"Windows protected your PC". Click **More info**, then click **Run
+anyway**. Windows does not recognize the publisher, and it says so.
+
+**Your antivirus may quarantine the file.** An unknown executable that
+downloads other executables looks like a generic threat to a scanner
+that goes by reputation. The detection name it reports is a generic
+one, not a name for this file. If you trust this shard, restore the
+file from quarantine and add an exclusion for `ShardPatcher.exe` and
+for the folder `%LOCALAPPDATA%\ServUOShard\`.
+
+If you would rather check first, ask shard staff for the file's
+SHA-256 and compare it with `certutil -hashfile ShardPatcher.exe
+SHA256`.
 
 ### What the patcher asks on first run
 
@@ -84,6 +101,44 @@ The **Play** button re-runs the same update-and-start sequence. Use it
 to try again after fixing a problem (for example, after Windows
 SmartScreen or after freeing up disk space).
 
+## Using the third-party ClassicUO launcher
+
+You do not have to use the patcher's own **Play** button. Some players
+prefer the third-party ClassicUO launcher instead, for its profiles,
+saved accounts, and autologin.
+
+### Create a profile
+
+Add a profile in the ClassicUO launcher with these fields:
+
+| Field | Value |
+|---|---|
+| ClassicUO folder | `%LOCALAPPDATA%\ServUOShard\client` (`C:\Users\<your user>\AppData\Local\ServUOShard\client`) |
+| Ultima Online folder | the folder from "First time", step 1 |
+| Server address | `46.62.226.1` |
+| Port | `2593` |
+| Client version | `7.0.108.0` |
+
+The **ClassicUO folder** field picks which client runs. The Ultima
+Online folder does not decide this. No plugin setting decides this
+either. A player who points it anywhere else lands on the wrong
+client, with no error message.
+
+The Ultima Online folder holds only the art and the maps. The
+ClassicUO folder holds the program. They are never the same folder.
+
+### The patcher still owns updates
+
+The ClassicUO launcher never checks the shard's patch service. It
+never downloads a shard file. Run `ShardPatcher.exe` first. It
+installs the client. Run `ShardPatcher.exe` again after every shard
+update.
+
+If the game misbehaves after a shard update, and you play through the
+ClassicUO launcher, your client has likely fallen behind the shard.
+Run `ShardPatcher.exe`. It restores every client file to match the
+shard, no matter which launcher starts the game.
+
 ## Error messages
 
 Every error message stops the patcher before it starts ClassicUO, and
@@ -136,3 +191,6 @@ folder. Files the shard delivers, and the ClassicUO client itself, go
 into `%LOCALAPPDATA%\ServUOShard\` instead. If you already have your
 own ClassicUO install elsewhere, the patcher never touches it either -
 it starts only its own copy, under `%LOCALAPPDATA%\ServUOShard\client\`.
+
+The Ultima Online folder holds the art and the maps. The client
+folder holds the program. They are never the same folder.
