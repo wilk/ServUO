@@ -32,6 +32,9 @@ namespace Server.Items
 
     public abstract class BaseWeapon : Item, IWeapon, IFactionItem, IUsesRemaining, ICraftable, ISlayer, IDurability, ISetItem, IVvVItem, IOwnerRestricted, IResource, IArtifact, ICombatEquipment, IEngravable, IQuality
     {
+		// Issue #9: multiplier applied to weapon damage a player deals to a wild creature.
+		private static readonly double m_PveDamageScalar = Config.Get("Combat.PveDamageScalar", 3.0);
+
 		#region Damage Helpers
 		public static BaseWeapon GetDamageOutput(Mobile wielder, out int min, out int max)
 		{
@@ -2851,6 +2854,10 @@ namespace Server.Items
 
                 damage += (int)inc;
             }
+
+            // Issue #9: a player deals bonus weapon damage to a wild creature.
+            if (attacker is PlayerMobile && defender is BaseCreature wildDefender && !wildDefender.Controlled && !wildDefender.Summoned)
+                damage = (int)Math.Round(damage * m_PveDamageScalar);
 
 			damageGiven = AOS.Damage(
 				defender,

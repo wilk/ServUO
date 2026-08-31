@@ -242,7 +242,8 @@ namespace Server.Spells.Necromancy
                     if (!m_Target.Player)
                         damage *= 1.75;
 
-                    AOS.Damage(m_Target, m_From, (int)damage, 0, 0, 0, 100, 0);
+                    // Issue #9: bonus strangle damage a player deals to a wild creature.
+                    AOS.Damage(m_Target, m_From, SpellHelper.ScalePveSpellDamage(m_From, m_Target, (int)damage), 0, 0, 0, 100, 0);
 
                     if (0.60 <= Utility.RandomDouble()) // OSI: randomly revealed between first and third damage tick, guessing 60% chance
                         m_Target.RevealingAction();

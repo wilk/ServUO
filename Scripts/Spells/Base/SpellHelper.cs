@@ -67,6 +67,20 @@ namespace Server.Spells
         // Issue #45: spell damage returns to the pub57 value.
         private static readonly double m_DamageScalar = Config.Get("Spells.DamageScalar", 1.0);
 
+        // Issue #9: multiplier applied to spell damage a player deals to a wild creature.
+        private static readonly double m_PveDamageScalar = Config.Get("Spells.PveDamageScalar", 3.0);
+
+        // Issue #9: a player deals bonus spell damage to a wild creature (a BaseCreature
+        // that is neither tamed nor summoned). Monster-to-player, player-versus-player,
+        // and damage to pets or summons are unaffected.
+        public static int ScalePveSpellDamage(Mobile from, IDamageable target, int damage)
+        {
+            if (from is PlayerMobile && target is BaseCreature bc && !bc.Controlled && !bc.Summoned)
+                damage = (int)Math.Round(damage * m_PveDamageScalar);
+
+            return damage;
+        }
+
         #region Spell Focus and SDI Calculations
         private static SkillName[] _Schools =
         {
@@ -1462,6 +1476,9 @@ namespace Server.Spells
             int iDamage = (int)damage;
 
             iDamage = (int)Math.Round(iDamage * m_DamageScalar);
+
+            // Issue #9: bonus spell damage a player deals to a wild creature.
+            iDamage = ScalePveSpellDamage(from, damageable, iDamage);
 
             if (delay == TimeSpan.Zero)
             {

@@ -110,7 +110,8 @@ namespace Server.Spells.Necromancy
             BuffInfo.AddBuff(m, new BuffInfo(BuffIcon.PainSpike, 1075667, t.Expires - DateTime.UtcNow, m, Convert.ToString((int)damage)));
 
             m.DFA = DFAlgorithm.PainSpike;
-            AOS.Damage(m, Caster, (int)damage, 0, 0, 0, 0, 0, 0, 100);
+            // Issue #9: bonus pain spike damage a player deals to a wild creature.
+            AOS.Damage(m, Caster, SpellHelper.ScalePveSpellDamage(Caster, m, (int)damage), 0, 0, 0, 0, 0, 0, 100);
             AOS.DoLeech((int)damage, Caster, m);
             m.DFA = DFAlgorithm.Standard;
 
