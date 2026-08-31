@@ -2856,7 +2856,9 @@ namespace Server.Items
             }
 
             // Issue #9: a player deals bonus weapon damage to a wild creature.
-            if (attacker is PlayerMobile && defender is BaseCreature wildDefender && !wildDefender.Controlled && !wildDefender.Summoned)
+            bool pveScalarApplied = attacker is PlayerMobile && defender is BaseCreature wildDefender && !wildDefender.Controlled && !wildDefender.Summoned;
+
+            if (pveScalarApplied)
                 damage = (int)Math.Round(damage * m_PveDamageScalar);
 
 			damageGiven = AOS.Damage(
@@ -2873,6 +2875,17 @@ namespace Server.Items
 				direct,
 				false,
 				ranged ? Server.DamageType.Ranged : Server.DamageType.Melee);
+
+            // Issue #9: damageGiven may carry the wild-creature PvE damage scalar
+            // from the primary hit. Leech and cursed-weapon healing scale off damage
+            // dealt, not off a bonus meant only to speed up killing wild creatures,
+            // so strip the scalar back out before it feeds those sustain effects.
+            bool leechPveScalarApplied = attacker is PlayerMobile && defender is BaseCreature leechDefenderBc &&
+                !leechDefenderBc.Controlled && !leechDefenderBc.Summoned;
+
+            int leechDamageGiven = leechPveScalarApplied
+                ? (int)Math.Round(damageGiven / m_PveDamageScalar)
+                : damageGiven;
 
             DualWield.DoHit(attacker, defender, damage);
 
@@ -2921,21 +2934,21 @@ namespace Server.Items
 
                 if (CurseWeaponSpell.IsCursed(attacker, this))
 				{
-                    toHealCursedWeaponSpell += (int)(AOS.Scale(damageGiven, 50)); // Additional 50% life leech for cursed weapons (necro spell)
+                    toHealCursedWeaponSpell += (int)(AOS.Scale(leechDamageGiven, 50)); // Additional 50% life leech for cursed weapons (necro spell)
                 }
 
 				context = TransformationSpellHelper.GetContext(attacker);
 
 				if (stamLeech != 0)
 				{
-					attacker.Stam += AOS.Scale(damageGiven, stamLeech);
+					attacker.Stam += AOS.Scale(leechDamageGiven, stamLeech);
 				}
 
 				if (Core.SA) // New formulas
 				{
 					if (lifeLeech != 0)
 					{
-						int toHeal = Utility.RandomMinMax(0, (int)(AOS.Scale(damageGiven, lifeLeech) * 0.3));
+						int toHeal = Utility.RandomMinMax(0, (int)(AOS.Scale(leechDamageGiven, lifeLeech) * 0.3));
 
                         if (defender is BaseCreature && ((BaseCreature)defender).TaintedLifeAura)
                         {                            
@@ -2958,7 +2971,7 @@ namespace Server.Items
 
                     if (manaLeech != 0)
 					{
-                        attacker.Mana += Utility.RandomMinMax(0, (int)(AOS.Scale(damageGiven, manaLeech) * 0.4));
+                        attacker.Mana += Utility.RandomMinMax(0, (int)(AOS.Scale(leechDamageGiven, manaLeech) * 0.4));
 					}
 				}
 				else // Old formulas
@@ -2970,12 +2983,12 @@ namespace Server.Items
 
 					if (lifeLeech != 0)
 					{
-						attacker.Hits += AOS.Scale(damageGiven, lifeLeech);
+						attacker.Hits += AOS.Scale(leechDamageGiven, lifeLeech);
 					}
 
 					if (manaLeech != 0)
 					{
-						attacker.Mana += AOS.Scale(damageGiven, manaLeech);
+						attacker.Mana += AOS.Scale(leechDamageGiven, manaLeech);
 					}
 				}
 
@@ -3098,14 +3111,19 @@ namespace Server.Items
 					DoCurse(attacker, defender);
 				}
 
+				// Issue #9: damageGiven may carry the wild-creature PvE damage scalar.
+				// Stamina and mana drain are resource costs, not hit-point damage, so
+				// strip the scalar back out before applying them.
+				int drainDamageGiven = pveScalarApplied ? (int)Math.Round(damageGiven / m_PveDamageScalar) : damageGiven;
+
 				if (fatigueChance != 0 && fatigueChance > Utility.Random(100))
 				{
-					DoFatigue(attacker, defender, damageGiven);
+					DoFatigue(attacker, defender, drainDamageGiven);
 				}
 
 				if (manadrainChance != 0 && manadrainChance > Utility.Random(100))
 				{
-					DoManaDrain(attacker, defender, damageGiven);
+					DoManaDrain(attacker, defender, drainDamageGiven);
 				}
 				#endregion
 
@@ -3494,13 +3512,30 @@ namespace Server.Items
 
 			var count = 0;
 
+            // Issue #9: damageGiven may already carry the wild-creature PvE damage
+            // scalar from the primary hit against defender. Strip it back out here
+            // so splash damage does not inherit a bonus meant only for that hit,
+            // then reapply it per splash target based on that target's own eligibility.
+            bool primaryScalarApplied = from is PlayerMobile && defender is BaseCreature defenderBc &&
+                !defenderBc.Controlled && !defenderBc.Summoned;
+
+            int baseDamageGiven = primaryScalarApplied
+                ? (int)Math.Round(damageGiven / m_PveDamageScalar)
+                : damageGiven;
+
             foreach(var m in list)
             {
 				++count;
 
                 from.DoHarmful(m, true);
                 m.FixedEffect(0x3779, 1, 15, hue, 0);
-                AOS.Damage(m, from, (int)(damageGiven / 2), phys, fire, cold, pois, nrgy, Server.DamageType.SpellAOE);
+
+                int splashDamage = baseDamageGiven;
+
+                if (from is PlayerMobile && m is BaseCreature splashBc && !splashBc.Controlled && !splashBc.Summoned)
+                    splashDamage = (int)Math.Round(baseDamageGiven * m_PveDamageScalar);
+
+                AOS.Damage(m, from, (int)(splashDamage / 2), phys, fire, cold, pois, nrgy, Server.DamageType.SpellAOE);
             }
 
 			if (count > 0)
