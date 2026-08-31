@@ -27,7 +27,7 @@ namespace Server.Items
         // animation starts. The hit or the miss resolves ProjectileDelay
         // after that. Both values are provisional. The shard owner tunes
         // them in game.
-        public static TimeSpan ShootDelay = TimeSpan.FromMilliseconds(500);
+        public static TimeSpan ShootDelay = TimeSpan.FromMilliseconds(750);
         public static TimeSpan ProjectileDelay = TimeSpan.FromMilliseconds(250);
 
 		public override SkillName DefSkill { get { return SkillName.Archery; } }
