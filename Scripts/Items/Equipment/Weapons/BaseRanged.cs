@@ -17,6 +17,19 @@ namespace Server.Items
 		public override int DefHitSound { get { return 0x234; } }
 		public override int DefMissSound { get { return 0x238; } }
 
+        // Issue #8: the fire sound plays when the projectile leaves the
+        // weapon, ShootDelay after the shoot animation starts. Provisional,
+        // tuned in game. -1 plays no sound; BaseThrown overrides this.
+        public virtual int DefFireSound { get { return 0x224; } }
+        public virtual int FireSound { get { return DefFireSound; } }
+
+        // Issue #8: the projectile leaves ShootDelay after the shoot
+        // animation starts. The hit or the miss resolves ProjectileDelay
+        // after that. Both values are provisional. The shard owner tunes
+        // them in game.
+        public static TimeSpan ShootDelay = TimeSpan.FromMilliseconds(750);
+        public static TimeSpan ProjectileDelay = TimeSpan.FromMilliseconds(250);
+
 		public override SkillName DefSkill { get { return SkillName.Archery; } }
 		public override WeaponType DefType { get { return WeaponType.Ranged; } }
 		public override WeaponAnimation DefAnimation { get { return WeaponAnimation.ShootXBow; } }
@@ -105,21 +118,60 @@ namespace Server.Items
                         {
                             PlaySwingAnimation(attacker);
 
-                            // Issue #13: the hit resolves HitDelay after the
-                            // swing animation starts. Clamp the delay below the
-                            // swing delay, because the pre-AOS swing delay has
-                            // no floor.
-                            TimeSpan hitDelay = HitDelay < swingDelay ? HitDelay : swingDelay;
+                            // Issue #8: the projectile leaves ShootDelay after
+                            // the shoot animation starts. The hit or the miss
+                            // resolves ProjectileDelay after that. Clamp the
+                            // sum below the swing delay, because the pre-AOS
+                            // swing delay has no floor. Shorten ShootDelay
+                            // first, so the fire step always lands before the
+                            // resolve step.
+                            TimeSpan shootDelay = ShootDelay < swingDelay ? ShootDelay : swingDelay;
+                            TimeSpan projectileDelay = ProjectileDelay < swingDelay - shootDelay
+                                ? ProjectileDelay
+                                : swingDelay - shootDelay;
 
-                            Timer.DelayCall(hitDelay, () => ResolveSwing(attacker, damageable, 1.0));
-                        }
-                        else if (CheckHit(attacker, damageable))
-                        {
-                            OnHit(attacker, damageable);
+                            Timer.DelayCall(shootDelay, () =>
+                            {
+                                // Issue #8: a shot the server drops between the
+                                // swing and the fire step plays nothing more.
+                                if (CanStillResolve(attacker, damageable))
+                                {
+                                    OnProjectileFired(attacker, damageable);
+                                }
+                            });
+
+                            Timer.DelayCall(shootDelay + projectileDelay, () =>
+                            {
+                                // Issue #8: OnFired already spent the ammo at
+                                // the swing tick. ResolveSwing drops the hit
+                                // silently once the fight is no longer valid,
+                                // so hand the ammo back here instead of
+                                // losing it with no hit, miss, or recovery.
+                                if (CanStillResolve(attacker, damageable))
+                                {
+                                    ResolveSwing(attacker, damageable, 1.0);
+                                }
+                                else
+                                {
+                                    RecoverDroppedAmmo(attacker);
+                                }
+                            });
                         }
                         else
                         {
-                            OnMiss(attacker, damageable);
+                            // Issue #8: a special move calls OnSwing outside
+                            // the combat timer. It keeps the old, immediate
+                            // order, so the split above loses nothing here.
+                            OnProjectileFired(attacker, damageable);
+
+                            if (CheckHit(attacker, damageable))
+                            {
+                                OnHit(attacker, damageable);
+                            }
+                            else
+                            {
+                                OnMiss(attacker, damageable);
+                            }
                         }
 					}
 				}
@@ -203,6 +255,62 @@ namespace Server.Items
 			base.OnMiss(attacker, damageable);
 		}
 
+        // Issue #8: returns the ammo OnFired already consumed when the
+        // deferred shot never resolves - the target died, moved out of
+        // range, broke line of sight, or the attacker swapped weapons
+        // before the resolve step ran. No hit or miss ever plays, so this
+        // is the only chance to give it back. Mirrors the OnMiss recovery
+        // path; the pre-SE branch drops the ammo at the attacker's own
+        // feet, since the target may no longer be there to drop it near.
+        protected virtual void RecoverDroppedAmmo(Mobile attacker)
+        {
+            if (attacker.Deleted || !attacker.Player || AmmoType == null)
+            {
+                return;
+            }
+
+            if (Core.SE)
+            {
+                PlayerMobile p = attacker as PlayerMobile;
+
+                if (p != null)
+                {
+                    Type ammo = AmmoType;
+
+                    if (p.RecoverableAmmo.ContainsKey(ammo))
+                    {
+                        p.RecoverableAmmo[ammo]++;
+                    }
+                    else
+                    {
+                        p.RecoverableAmmo.Add(ammo, 1);
+                    }
+
+                    if (!p.Warmode)
+                    {
+                        if (m_RecoveryTimer == null)
+                        {
+                            m_RecoveryTimer = Timer.DelayCall(TimeSpan.FromSeconds(10), p.RecoverAmmo);
+                        }
+
+                        if (!m_RecoveryTimer.Running)
+                        {
+                            m_RecoveryTimer.Start();
+                        }
+                    }
+                }
+            }
+            else
+            {
+                var ammo = Ammo;
+
+                if (ammo != null)
+                {
+                    ammo.MoveToWorld(attacker.Location, attacker.Map);
+                }
+            }
+        }
+
         public virtual bool OnFired(Mobile attacker, IDamageable damageable)
 		{
 			WeaponAbility ability = WeaponAbility.GetCurrentAbility(attacker);
@@ -239,10 +347,21 @@ namespace Server.Items
 				}
 			}
 
-            attacker.MovingEffect(damageable, EffectID, 18, 1, false, false);
-
 			return true;
 		}
+
+        // Issue #8: fires the projectile that OnFired used to launch right
+        // away. Runs ShootDelay after the shoot animation starts, on the
+        // combat timer path, or right after OnFired on the immediate path.
+        public virtual void OnProjectileFired(Mobile attacker, IDamageable damageable)
+        {
+            attacker.MovingEffect(damageable, EffectID, 18, 1, false, false);
+
+            if (FireSound != -1)
+            {
+                attacker.PlaySound(FireSound);
+            }
+        }
 
 		public override void Serialize(GenericWriter writer)
 		{

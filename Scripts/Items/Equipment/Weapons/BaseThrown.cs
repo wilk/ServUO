@@ -39,7 +39,7 @@ namespace Server.Items
                 {
                     /*
                      * Each weapon has a base and max range available to it, where the base
-                     * range is modified by the player’s strength to determine the actual range.
+                     * range is modified by the playerï¿½s strength to determine the actual range.
                      *
                      * Determining the maximum range of each weapon while in use:
                      * - Range = BaseRange + ((PlayerStrength - MinWeaponStrReq) / ((150 - MinWeaponStrReq) / 3))
@@ -97,6 +97,16 @@ namespace Server.Items
             }
         }
 
+        // Issue #8: a thrown weapon plays no separate fire sound. The throw
+        // and the hit or the miss sound cover it.
+        public override int DefFireSound
+        {
+            get
+            {
+                return -1;
+            }
+        }
+
         public override SkillName DefSkill
         {
             get
@@ -136,12 +146,18 @@ namespace Server.Items
         {
             m_Thrower = attacker;
 
+            return true;
+        }
+
+        // Issue #8: BaseRanged.OnProjectileFired now sends its own moving
+        // effect. Override it here instead of stacking a second one, and
+        // keep the melee-range skip and the Hue argument this weapon used.
+        public override void OnProjectileFired(Mobile attacker, IDamageable damageable)
+        {
             if (!attacker.InRange(damageable, 1))
             {
                 attacker.MovingEffect(damageable, EffectID, 18, 1, false, false, Hue, 0);
             }
-
-            return true;
         }
 
         public override void OnHit(Mobile attacker, IDamageable damageable, double damageBonus)
