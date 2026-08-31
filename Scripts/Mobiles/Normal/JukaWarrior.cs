@@ -111,13 +111,13 @@ namespace Server.Mobiles
                 case 0:
                     {
                         defender.SendLocalizedMessage(1004014); // You have been stunned!
-                        defender.Freeze(TimeSpan.FromSeconds(4.0));
+                        defender.Freeze(TimeSpan.FromSeconds(4.0), this);
                         break;
                     }
                 case 1:
                     {
                         defender.SendAsciiMessage("You have been hit by a paralyzing blow!");
-                        defender.Freeze(TimeSpan.FromSeconds(3.0));
+                        defender.Freeze(TimeSpan.FromSeconds(3.0), this);
                         break;
                     }
                 case 2:

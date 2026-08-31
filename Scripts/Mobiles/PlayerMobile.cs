@@ -1808,6 +1808,8 @@ namespace Server.Mobiles
                 Timer.DelayCall<PlayerMobile>(TimeSpan.FromSeconds(1.5), Server.Engines.UOStore.UltimaStore.CheckPendingItem, this);
         }
 
+        public override bool SetCombatantOnAggression { get { return false; } }
+
         public override void AggressiveAction(Mobile aggressor, bool criminal)
         {
             base.AggressiveAction(aggressor, criminal);
@@ -1831,6 +1833,28 @@ namespace Server.Mobiles
                     }
                 }
             }
+        }
+
+        private void EnterWarOnHit()
+        {
+            if (Alive && !Warmode)
+            {
+                Warmode = true;
+            }
+        }
+
+        public override void OnHarmfulSpell(Mobile from)
+        {
+            base.OnHarmfulSpell(from);
+
+            EnterWarOnHit();
+        }
+
+        public override void OnFrozenBy(Mobile from)
+        {
+            base.OnFrozenBy(from);
+
+            EnterWarOnHit();
         }
 
         public override void DoHarmful(IDamageable damageable, bool indirect)
@@ -3607,6 +3631,11 @@ namespace Server.Mobiles
 
 		public override void OnDamage(int amount, Mobile from, bool willKill)
 		{
+			if (amount > 0)
+			{
+				EnterWarOnHit();
+			}
+
 			int disruptThreshold;
 
 			if (!Core.AOS)
@@ -4393,6 +4422,11 @@ namespace Server.Mobiles
 			if (from != null && result == ApplyPoisonResult.Poisoned && PoisonTimer is PoisonImpl.PoisonTimer)
 			{
 				(PoisonTimer as PoisonImpl.PoisonTimer).From = from;
+			}
+
+			if (result == ApplyPoisonResult.Poisoned)
+			{
+				EnterWarOnHit();
 			}
 
 			return result;
@@ -5541,6 +5575,8 @@ namespace Server.Mobiles
 				if (value)
 				{
 					AddBuff(new BuffInfo(BuffIcon.Paralyze, 1075827)); //Paralyze/You are frozen and can not move
+
+					EnterWarOnHit();
 				}
 				else
 				{

@@ -81,7 +81,8 @@ namespace Server.Mobiles
                 // This should be done in place of the normal attack damage.
                 //AOS.Damage( defender, this, Utility.RandomMinMax( 35, 65 ), 0, 0, 0, 0, 100 );
 
-                defender.Frozen = true; 
+                defender.Frozen = true;
+                defender.OnFrozenBy(this);
 
                 ExpireTimer timer = new ExpireTimer(defender, TimeSpan.FromSeconds(4.0));
                 timer.Start();

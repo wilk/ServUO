@@ -2077,7 +2077,7 @@ namespace Server.Mobiles
             }
         }
 
-        public virtual void OnHarmfulSpell(Mobile from)
+        public override void OnHarmfulSpell(Mobile from)
         { }
 
         #region Alter[...]Damage From/To
@@ -7652,7 +7652,6 @@ namespace Server.Mobiles
                 }
                 else if (target is PlayerMobile)
                 {
-                    ((PlayerMobile)target).Combatant = this;
                     Combatant = target;
                 }
             }

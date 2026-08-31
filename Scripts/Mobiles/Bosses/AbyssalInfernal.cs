@@ -181,6 +181,7 @@ namespace Server.Mobiles
                     toCondemn.PlaySound(0x1FE);
 
                     toCondemn.Frozen = true;
+                    toCondemn.OnFrozenBy(this);
 
                     int seconds = 15;
 
@@ -284,6 +285,7 @@ namespace Server.Mobiles
                 AOS.Damage(m, this, Utility.RandomMinMax(90, 110), 0, 0, 0, 0, 100);
 
                 m.Frozen = true;
+                m.OnFrozenBy(this);
 
                 Timer.DelayCall(TimeSpan.FromSeconds(3), () =>
                 {

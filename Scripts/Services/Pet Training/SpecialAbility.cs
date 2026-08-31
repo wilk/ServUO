@@ -2494,6 +2494,7 @@ namespace Server.Mobiles
 
             target.SendLocalizedMessage(number, creature.Name, 0x21);
             target.Frozen = true;
+            target.OnFrozenBy(creature);
 
             BuffInfo.AddBuff(target, new BuffInfo(BuffIcon.TrueFear, 1153791, 1153827, TimeSpan.FromSeconds(seconds), target));
 
@@ -2539,6 +2540,7 @@ namespace Server.Mobiles
             if (defender.Alive)
             {
                 defender.Frozen = true;
+                defender.OnFrozenBy(creature);
 
                 Timer.DelayCall(TimeSpan.FromSeconds(5.0), victim =>
                 {

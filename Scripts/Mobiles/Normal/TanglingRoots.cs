@@ -71,6 +71,7 @@ namespace Server.Mobiles
                 if (0.2 > Utility.RandomDouble() && !m_TangleCooldown.Contains(m) && InRange(m, 6) && !FountainOfFortune.UnderProtection(m))
                 {
                     m.Frozen = true;
+                    m.OnFrozenBy(this);
                     m.MoveToWorld(Location, Map);
 
                     m.PlaySound(0x1FE);

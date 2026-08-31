@@ -1406,12 +1406,12 @@ namespace Server.Spells
                 new SpellDamageTimer(spell, target, from, iDamage, delay).Start();
             }
 
-            if (target is BaseCreature && from != null && delay == TimeSpan.Zero)
+            if (target != null && from != null && delay == TimeSpan.Zero)
             {
-                BaseCreature c = (BaseCreature)target;
+                target.OnHarmfulSpell(from);
 
-                c.OnHarmfulSpell(from);
-                c.OnDamagedBySpell(from);
+                if (target is BaseCreature)
+                    ((BaseCreature)target).OnDamagedBySpell(from);
             }
         }
 
@@ -1498,12 +1498,12 @@ namespace Server.Spells
                 new SpellDamageTimerAOS(spell, damageable, from, iDamage, phys, fire, cold, pois, nrgy, chaos, direct, delay, dfa).Start();
             }
 
-            if (target is BaseCreature && from != null && delay == TimeSpan.Zero)
+            if (target != null && from != null && delay == TimeSpan.Zero)
             {
-                BaseCreature c = (BaseCreature)target;
+                target.OnHarmfulSpell(from);
 
-                c.OnHarmfulSpell(from);
-                c.OnDamagedBySpell(from);
+                if (target is BaseCreature)
+                    ((BaseCreature)target).OnDamagedBySpell(from);
             }
         }
 
@@ -1633,12 +1633,12 @@ namespace Server.Spells
                     target.DFA = DFAlgorithm.Standard;
                 }
 
-                if (m_Target is BaseCreature && m_From != null)
+                if (target != null && m_From != null)
                 {
-                    BaseCreature c = (BaseCreature)m_Target;
+                    target.OnHarmfulSpell(m_From);
 
-                    c.OnHarmfulSpell(m_From);
-                    c.OnDamagedBySpell(m_From);
+                    if (m_Target is BaseCreature)
+                        ((BaseCreature)m_Target).OnDamagedBySpell(m_From);
                 }
 
                 if (target != null)

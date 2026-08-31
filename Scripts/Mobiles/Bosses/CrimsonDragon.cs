@@ -201,6 +201,7 @@ namespace Server.Mobiles
             if (m_NextTerror < DateTime.UtcNow && m != null && InRange(m.Location, 3) && m.IsPlayer())
             {
                 m.Frozen = true;
+                m.OnFrozenBy(this);
                 m.SendLocalizedMessage(1080342, Name, 33); // Terror slices into your very being, destroying any chance of resisting ~1_name~ you might have had
 
                 Timer.DelayCall(TimeSpan.FromSeconds(5), new TimerStateCallback(Terrorize), m);
