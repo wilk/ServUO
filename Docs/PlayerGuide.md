@@ -14,10 +14,9 @@ Do these steps once, in order.
 
 1. Install Ultima Online (the classic client). Note the install folder -
    it must contain `client.exe`.
-2. Download `ShardPatcher.exe` from the shard's patch service. Ask
-   shard staff for the download link if you do not have it. The
-   patcher is a single file. You do not need any other file next to
-   it.
+2. Download `ShardPatcher.exe` from the shard's patch service:
+   <http://46.62.226.1:8120/ShardPatcher.exe>. The patcher is a
+   single file. You do not need any other file next to it.
 3. Run `ShardPatcher.exe`.
 
 You do not install ClassicUO yourself. The patcher installs the
@@ -98,7 +97,7 @@ Add a profile in the ClassicUO launcher with these fields:
 |---|---|
 | ClassicUO folder | `%LOCALAPPDATA%\ServUOShard\client` (`C:\Users\<your user>\AppData\Local\ServUOShard\client`) |
 | Ultima Online folder | the folder from "First time", step 1 |
-| Server address | ask shard staff for the current address |
+| Server address | `46.62.226.1` |
 | Port | `2593` |
 | Client version | `7.0.108.0` |
 
