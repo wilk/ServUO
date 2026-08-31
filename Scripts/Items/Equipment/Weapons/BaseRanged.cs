@@ -140,7 +140,22 @@ namespace Server.Items
                                 }
                             });
 
-                            Timer.DelayCall(shootDelay + projectileDelay, () => ResolveSwing(attacker, damageable, 1.0));
+                            Timer.DelayCall(shootDelay + projectileDelay, () =>
+                            {
+                                // Issue #8: OnFired already spent the ammo at
+                                // the swing tick. ResolveSwing drops the hit
+                                // silently once the fight is no longer valid,
+                                // so hand the ammo back here instead of
+                                // losing it with no hit, miss, or recovery.
+                                if (CanStillResolve(attacker, damageable))
+                                {
+                                    ResolveSwing(attacker, damageable, 1.0);
+                                }
+                                else
+                                {
+                                    RecoverDroppedAmmo(attacker);
+                                }
+                            });
                         }
                         else
                         {
@@ -239,6 +254,62 @@ namespace Server.Items
 
 			base.OnMiss(attacker, damageable);
 		}
+
+        // Issue #8: returns the ammo OnFired already consumed when the
+        // deferred shot never resolves - the target died, moved out of
+        // range, broke line of sight, or the attacker swapped weapons
+        // before the resolve step ran. No hit or miss ever plays, so this
+        // is the only chance to give it back. Mirrors the OnMiss recovery
+        // path; the pre-SE branch drops the ammo at the attacker's own
+        // feet, since the target may no longer be there to drop it near.
+        protected virtual void RecoverDroppedAmmo(Mobile attacker)
+        {
+            if (attacker.Deleted || !attacker.Player || AmmoType == null)
+            {
+                return;
+            }
+
+            if (Core.SE)
+            {
+                PlayerMobile p = attacker as PlayerMobile;
+
+                if (p != null)
+                {
+                    Type ammo = AmmoType;
+
+                    if (p.RecoverableAmmo.ContainsKey(ammo))
+                    {
+                        p.RecoverableAmmo[ammo]++;
+                    }
+                    else
+                    {
+                        p.RecoverableAmmo.Add(ammo, 1);
+                    }
+
+                    if (!p.Warmode)
+                    {
+                        if (m_RecoveryTimer == null)
+                        {
+                            m_RecoveryTimer = Timer.DelayCall(TimeSpan.FromSeconds(10), p.RecoverAmmo);
+                        }
+
+                        if (!m_RecoveryTimer.Running)
+                        {
+                            m_RecoveryTimer.Start();
+                        }
+                    }
+                }
+            }
+            else
+            {
+                var ammo = Ammo;
+
+                if (ammo != null)
+                {
+                    ammo.MoveToWorld(attacker.Location, attacker.Map);
+                }
+            }
+        }
 
         public virtual bool OnFired(Mobile attacker, IDamageable damageable)
 		{

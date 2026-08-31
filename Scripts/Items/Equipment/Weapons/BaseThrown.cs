@@ -146,12 +146,18 @@ namespace Server.Items
         {
             m_Thrower = attacker;
 
+            return true;
+        }
+
+        // Issue #8: BaseRanged.OnProjectileFired now sends its own moving
+        // effect. Override it here instead of stacking a second one, and
+        // keep the melee-range skip and the Hue argument this weapon used.
+        public override void OnProjectileFired(Mobile attacker, IDamageable damageable)
+        {
             if (!attacker.InRange(damageable, 1))
             {
                 attacker.MovingEffect(damageable, EffectID, 18, 1, false, false, Hue, 0);
             }
-
-            return true;
         }
 
         public override void OnHit(Mobile attacker, IDamageable damageable, double damageBonus)
