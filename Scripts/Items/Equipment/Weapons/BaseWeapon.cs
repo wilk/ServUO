@@ -33,7 +33,10 @@ namespace Server.Items
     public abstract class BaseWeapon : Item, IWeapon, IFactionItem, IUsesRemaining, ICraftable, ISlayer, IDurability, ISetItem, IVvVItem, IOwnerRestricted, IResource, IArtifact, ICombatEquipment, IEngravable, IQuality
     {
 		// Issue #9: multiplier applied to weapon damage a player deals to a wild creature.
-		private static readonly double m_PveDamageScalar = Config.Get("Combat.PveDamageScalar", 3.0);
+		private static readonly double m_PveDamageScalar = Config.Get("Combat.PveDamageScalar", 2.0);
+
+		// Issue #10: multiplier applied to weapon damage a wild creature deals to a player.
+		private static readonly double m_MonsterDamageScalar = Config.Get("Combat.MonsterDamageScalar", 0.5);
 
 		#region Damage Helpers
 		public static BaseWeapon GetDamageOutput(Mobile wielder, out int min, out int max)
@@ -2869,11 +2872,17 @@ namespace Server.Items
                 damage += (int)inc;
             }
 
-            // Issue #9: a player deals bonus weapon damage to a wild creature.
+            // Issue #9 / #10: a player deals bonus weapon damage to a wild creature; a
+            // wild creature deals reduced weapon damage to a player. A player's pet or
+            // a summoned creature is not a "wild creature" and is not scaled.
             bool pveScalarApplied = attacker is PlayerMobile && defender is BaseCreature wildDefender && !wildDefender.Controlled && !wildDefender.Summoned;
+            bool monsterScalarApplied = attacker is BaseCreature wildAttacker && !wildAttacker.Controlled && !wildAttacker.Summoned && defender is PlayerMobile;
 
             if (pveScalarApplied)
                 damage = (int)Math.Round(damage * m_PveDamageScalar);
+
+            if (monsterScalarApplied)
+                damage = (int)Math.Round(damage * m_MonsterDamageScalar);
 
 			damageGiven = AOS.Damage(
 				defender,
@@ -2890,16 +2899,21 @@ namespace Server.Items
 				false,
 				ranged ? Server.DamageType.Ranged : Server.DamageType.Melee);
 
-            // Issue #9: damageGiven may carry the wild-creature PvE damage scalar
-            // from the primary hit. Leech and cursed-weapon healing scale off damage
-            // dealt, not off a bonus meant only to speed up killing wild creatures,
-            // so strip the scalar back out before it feeds those sustain effects.
+            // Issue #9 / #10: damageGiven may carry the wild-creature PvE damage scalar
+            // from the primary hit, in either direction. Leech and cursed-weapon healing
+            // scale off damage dealt, not off a bonus or penalty meant only for the hit
+            // itself, so strip the scalar back out before it feeds those sustain effects.
             bool leechPveScalarApplied = attacker is PlayerMobile && defender is BaseCreature leechDefenderBc &&
                 !leechDefenderBc.Controlled && !leechDefenderBc.Summoned;
 
+            bool leechMonsterScalarApplied = attacker is BaseCreature leechAttackerBc &&
+                !leechAttackerBc.Controlled && !leechAttackerBc.Summoned && defender is PlayerMobile;
+
             int leechDamageGiven = leechPveScalarApplied
                 ? (int)Math.Round(damageGiven / m_PveDamageScalar)
-                : damageGiven;
+                : leechMonsterScalarApplied
+                    ? (int)Math.Round(damageGiven / m_MonsterDamageScalar)
+                    : damageGiven;
 
             DualWield.DoHit(attacker, defender, damage);
 
@@ -3125,10 +3139,14 @@ namespace Server.Items
 					DoCurse(attacker, defender);
 				}
 
-				// Issue #9: damageGiven may carry the wild-creature PvE damage scalar.
-				// Stamina and mana drain are resource costs, not hit-point damage, so
-				// strip the scalar back out before applying them.
-				int drainDamageGiven = pveScalarApplied ? (int)Math.Round(damageGiven / m_PveDamageScalar) : damageGiven;
+				// Issue #9 / #10: damageGiven may carry the wild-creature PvE damage scalar,
+				// in either direction. Stamina and mana drain are resource costs, not
+				// hit-point damage, so strip the scalar back out before applying them.
+				int drainDamageGiven = pveScalarApplied
+					? (int)Math.Round(damageGiven / m_PveDamageScalar)
+					: monsterScalarApplied
+						? (int)Math.Round(damageGiven / m_MonsterDamageScalar)
+						: damageGiven;
 
 				if (fatigueChance != 0 && fatigueChance > Utility.Random(100))
 				{
@@ -3526,16 +3544,22 @@ namespace Server.Items
 
 			var count = 0;
 
-            // Issue #9: damageGiven may already carry the wild-creature PvE damage
-            // scalar from the primary hit against defender. Strip it back out here
-            // so splash damage does not inherit a bonus meant only for that hit,
-            // then reapply it per splash target based on that target's own eligibility.
+            // Issue #9 / #10: damageGiven may already carry the wild-creature PvE damage
+            // scalar from the primary hit against defender, in either direction. Strip
+            // it back out here so splash damage does not inherit a bonus or penalty
+            // meant only for that hit, then reapply it per splash target based on that
+            // target's own eligibility.
             bool primaryScalarApplied = from is PlayerMobile && defender is BaseCreature defenderBc &&
                 !defenderBc.Controlled && !defenderBc.Summoned;
 
+            bool primaryMonsterScalarApplied = from is BaseCreature fromBc &&
+                !fromBc.Controlled && !fromBc.Summoned && defender is PlayerMobile;
+
             int baseDamageGiven = primaryScalarApplied
                 ? (int)Math.Round(damageGiven / m_PveDamageScalar)
-                : damageGiven;
+                : primaryMonsterScalarApplied
+                    ? (int)Math.Round(damageGiven / m_MonsterDamageScalar)
+                    : damageGiven;
 
             foreach(var m in list)
             {
@@ -3548,6 +3572,8 @@ namespace Server.Items
 
                 if (from is PlayerMobile && m is BaseCreature splashBc && !splashBc.Controlled && !splashBc.Summoned)
                     splashDamage = (int)Math.Round(baseDamageGiven * m_PveDamageScalar);
+                else if (from is BaseCreature splashFromBc && !splashFromBc.Controlled && !splashFromBc.Summoned && m is PlayerMobile)
+                    splashDamage = (int)Math.Round(baseDamageGiven * m_MonsterDamageScalar);
 
                 AOS.Damage(m, from, (int)(splashDamage / 2), phys, fire, cold, pois, nrgy, Server.DamageType.SpellAOE);
             }
