@@ -41,7 +41,13 @@ namespace Server.Spells
             double avg = ChanceLength * circle;
 
             min = avg - ChanceOffset;
-            max = avg + ChanceOffset;
+
+            if (circle == (int)SpellCircle.Seventh)
+                max = min + (100.0 - min) / (1.0 - 0.05);
+            else if (circle == (int)SpellCircle.Eighth)
+                max = min + (100.0 - min) / (1.0 - 0.10);
+            else
+                max = avg + ChanceOffset;
         }
 
         public override int GetMana()
