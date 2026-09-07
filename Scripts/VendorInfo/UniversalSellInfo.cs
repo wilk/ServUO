@@ -118,6 +118,9 @@ namespace Server.Mobiles
             if (item is Gold || item is BankCheck)
                 return false;
 
+            if (!item.IsStandardLoot())
+                return false;
+
             return true;
         }
 
