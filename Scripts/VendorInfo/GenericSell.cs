@@ -26,6 +26,7 @@ namespace Server.Mobiles
                 return m_Types;
             }
         }
+        public IEnumerable<KeyValuePair<Type, int>> Entries { get { return m_Table; } }
         public void Add(Type type, int price)
         {
             m_Table[type] = price;
