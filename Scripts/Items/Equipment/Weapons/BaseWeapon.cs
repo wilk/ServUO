@@ -1473,6 +1473,8 @@ namespace Server.Items
                 }
 
                 chance = 0.90 * (Math.Min(atkValue, 100.0) / 100.0);
+
+                bonus = 0;
             }
 			else if (Core.AOS)
 			{
