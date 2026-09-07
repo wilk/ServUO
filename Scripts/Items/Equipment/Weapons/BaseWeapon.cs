@@ -1453,7 +1453,28 @@ namespace Server.Items
 
 			int bonus = GetHitChanceBonus();
 
-			if (Core.AOS)
+            // Issue #12: a player archer vs. a monster hits at a flat 90% at
+            // 100.0 Archery, scaled linearly below that, regardless of the
+            // monster's own weapon skill. PvP archery and all melee combat,
+            // including thrown weapons, keep the shared formula below
+            // untouched. BaseThrown derives from BaseRanged but uses
+            // SkillName.Throwing, not Archery, so it is excluded here.
+            bool rangedVsMonster = atkWeapon is BaseRanged && !(atkWeapon is BaseThrown) &&
+                attacker.Player && !defender.Player;
+
+            double chance;
+
+            if (rangedVsMonster)
+            {
+                if (Core.AOS)
+                {
+                    bonus += AosAttributes.GetValue(attacker, AosAttribute.AttackChance);
+                    bonus = Math.Min(attacker.Race == Race.Gargoyle ? 50 : 45, bonus);
+                }
+
+                chance = 0.90 * (Math.Min(atkValue, 100.0) / 100.0);
+            }
+			else if (Core.AOS)
 			{
                 if (atkValue <= -20.0)
                     atkValue = -19.9;
@@ -1484,6 +1505,8 @@ namespace Server.Items
                 theirValue = (defValue + 20.0) * (100 + bonus);
 
                 bonus = 0;
+
+                chance = ourValue / (theirValue * 2.0);
 			}
 			else
 			{
@@ -1499,9 +1522,9 @@ namespace Server.Items
 
 				ourValue = (atkValue + 50.0);
 				theirValue = (defValue + 50.0);
-			}
 
-			double chance = ourValue / (theirValue * 2.0);
+				chance = ourValue / (theirValue * 2.0);
+			}
 
 			chance *= 1.0 + ((double)bonus / 100);
 
